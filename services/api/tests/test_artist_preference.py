@@ -83,3 +83,35 @@ def test_unmatched_or_theme_queries_do_not_apply_artist_mix(intent):
     response = discover("quiet", 5, CatalogRegistry({}), intent=intent, prefer_seed_artist=True)
     assert not response.artist_preference.applied
     assert response.artist_preference.not_applied_reason == ("theme" if intent == "theme" else "seed_unresolved")
+
+
+@pytest.mark.parametrize("enabled,expected", [(True, 7), (False, 2)])
+def test_bounded_attribute_expansion_fills_other_artist_shortage_before_backfill(enabled, expected):
+    registry = catalog(other=1)
+    registry.max_discovery_operations = 4
+    registry.responses["folk hits"] = result([
+        song(f"Expanded {i}", f"Related Artist {i}", genres=("folk",)) for i in range(10)
+    ] + [song("Unrelated Hit", "Popular Artist", genres=("dance",))])
+    response = discover("Anchor", 10, registry, prefer_seed_artist=enabled)
+    assert response.artist_preference.same_artist_count == expected
+    assert response.artist_preference.shortfalls == []
+    assert len(registry.calls) == 4
+    assert registry.calls[-1][0] == "folk hits"
+    assert all(item.track.title != "Unrelated Hit" for item in response.items)
+
+
+@pytest.mark.parametrize("enabled", [None, True, False])
+def test_no_supplementary_query_when_groups_are_full_or_policy_is_omitted(enabled):
+    registry = catalog()
+    registry.max_discovery_operations = 24
+    discover("Anchor", 10, registry, prefer_seed_artist=enabled)
+    assert len(registry.calls) == 3
+
+
+def test_supplementary_recall_is_at_most_once_even_when_no_more_matches_exist():
+    registry = catalog(other=0)
+    registry.max_discovery_operations = 24
+    response = discover("Anchor", 10, registry, prefer_seed_artist=False)
+    assert len(registry.calls) == 4
+    assert response.artist_preference.shortfalls == ["other_artists"]
+    assert response.artist_preference.same_artist_count == 10

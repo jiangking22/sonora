@@ -4,7 +4,11 @@
 
 - [x] 1. Backend contract and deterministic 70% / 20% selection.
 - [x] 2. Homepage switch, browser persistence and cancellation-safe refresh.
-- [ ] 3. Integrated browser acceptance and bilingual current-state documentation.
+- [x] 3. Integrated browser acceptance and bilingual current-state documentation.
+
+Item 3 runtime finding: bare genre searches can be dominated by title matches. Add one bounded
+metadata-derived `<genre/tag> hits` query only when the other-artist group is short and the existing
+budget permits it; preserve eligibility and omitted-field behavior. Guard with failing regressions.
 
 Execute sequentially, failing regressions first, one focused commit per item. Scope: target
 discovery API/domain, homepage client, tests and docs; preserve legacy and assistant policy.
@@ -23,6 +27,13 @@ including 11 preference UI scenarios. ESLint, TypeScript and production build pa
 local-storage failures, confirmation, dirty input, cancelled late replies and failed-switch retry
 are covered. Review reproduced and fixed missing artist alongside proof on repeat submission;
 expired proof is dropped on retry/switch. Browser acceptance is item 3.
+
+Item 3 acceptance: 383 API / 102 Web tests, Ruff/compile, ESLint/types/build, fixed evaluator
+and legacy smoke pass. Real Edge desktop/mobile checks on Dreams and 我好想你 yield 7/3 on
+and 2/8 off, with at most ten external operations per result; 320–1440px have no overflow.
+Keyboard focus, actual summaries, browser persistence and dirty-input behavior pass. Local
+API/Web images updated; four services healthy; temporary QA accounts/sessions removed.
+See docs/seed-artist-preference-acceptance.md for evidence and observed upstream/console limits.
 
 ## CI provider test isolation / CI 音乐来源测试环境隔离
 

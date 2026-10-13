@@ -235,6 +235,31 @@ Embeddings and RAG do not silently enter ranking. No LLM ranks songs. / 向量�
 
 ### Homepage discovery / 首页歌曲推荐
 
+**Seed artist preference** defaults on and remembers this browser's choice. On targets about
+70% from the identified/confirmed song artist; off targets about 20%, prioritizing other artists.
+For 3/5/10 results the same-artist targets are 2/4/7 on and 1/1/2 off. Switching refreshes a
+confirmed song immediately; an unsubmitted input edit waits for **Find music**. Each mix shows
+its own preference, actual counts and candidate shortages. Eligible tracks from the other group
+fill gaps; the service returns fewer tracks if neither group has enough. Mood/theme searches
+and unresolved recordings do not apply the artist mix. This switch does not certify authorship.
+When other-artist candidates are short, one extra genre/tag-based query may use the remaining
+search budget before filling gaps; it keeps the same relevance filters and deadlines.
+
+**原唱偏好**默认开启，并记住本浏览器选择。开启目标约七成同歌手，关闭约两成，优先探索其他歌手。
+推荐 3／5／10 首时，同歌手目标分别为开启 2／4／7 首、关闭 1／1／2 首。已确认歌曲切换后立即刷新；
+修改输入但尚未提交时只更新设置。每批结果展示生成时的偏好、实际数量及候选不足说明，允许另一类相关歌曲
+补足；两类均不足则少返回。主题查询、未识别或待确认的歌曲不应用比例。“原唱”以识别或确认的歌手为准，
+不额外证明创作或原唱身份。
+其他歌手候选不足时，会在原有预算内最多补查一次曲风／标签相关作品，再进行补足；不放宽相关性筛选。
+
+The additive request field `prefer_seed_artist` accepts only JSON booleans (or omitted/null
+for the previous policy). `artist_preference` reports `applied`, `prefer_seed_artist`,
+`target_same_artist`, `same_artist_count`, `other_artist_count`, `shortfalls` and
+`not_applied_reason`. Existing assistant/MCP ranking is unchanged. No migration or new dependency.
+接口新增严格布尔参数 `prefer_seed_artist`；省略或 null 保留旧策略。可选摘要 `artist_preference`
+返回应用状态、目标和实际数量，以及不足／未应用原因。音乐助手和 MCP 保持原策略，无需迁移或新增依赖。
+See [the feature contract](docs/specs/seed-artist-preference.md) and [acceptance evidence](docs/seed-artist-preference-acceptance.md).
+
 The homepage identifies a recording before recalling related songs from its artist and available
 genre/tag context. Source-backed hints identify `我好想你` with 苏打绿 and `匆匆那年` with 王菲;
 your explicit artist selection takes precedence. Other song inputs, including a single unverified

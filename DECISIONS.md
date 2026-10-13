@@ -2,7 +2,7 @@
 
 ## ADR-039: Explicit seed-artist allocation in homepage discovery
 
-**Status:** Accepted; backend and homepage implemented, integrated browser acceptance pending.
+**Status:** Accepted and implemented; local desktop/mobile real-catalog acceptance passed.
 **Date:** 2026-10-13
 
 Homepage discovery accepts optional strict `prefer_seed_artist`. Omitted/null preserves existing
@@ -13,6 +13,12 @@ Shortages use remaining eligible candidates from the other group and report actu
 shortfalls. Recall prioritizes artist/attributes according to the switch without increasing budgets.
 Themes, unresolved seeds and model suggestions awaiting confirmation report not-applied status.
 No model controls allocation, and no unrelated fixtures fill song-result shortages.
+
+Runtime refinement: bare genre searches returned few tracks with matching genre metadata.
+Before backfilling an other-artist shortage, explicit-preference discovery may try one
+`<genre/tag> hits` query derived from the seed metadata, only within the remaining existing
+budget. No additional query runs when quotas are met or the caller omits the preference.
+This broadens recall without relaxing eligibility or changing provider limits.
 
 The homepage defaults on, stores only this boolean locally and sends it explicitly. Confirmed
 recording identity is retained in request snapshots; switching cancels previous requests and

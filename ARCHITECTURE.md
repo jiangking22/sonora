@@ -6,6 +6,8 @@ Seed-artist allocation (ADR-039): the discovery API accepts optional strict `pre
 Explicit values prioritize recall and select a 70%/20% same-artist mix using canonical aliases,
 existing eligibility and within-group diverse ranking. Additive `artist_preference` reports
 actual counts, target and shortages; unresolved/theme/confirmation states do not apply a mix.
+When other-artist candidates are short, one metadata-derived `<genre/tag> hits` query may use
+remaining search budget before cross-group filling; eligibility and all deadline/call caps remain.
 Omitted/null values retain the previous policy. The homepage sends an explicit boolean, defaults
 on and persists it in browser storage. Request snapshots preserve confirmed recording identity;
 switching cancels in-flight work and ignores stale replies. Dirty inputs wait for submission.

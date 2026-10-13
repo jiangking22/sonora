@@ -204,6 +204,16 @@ def finish_discovery(state: DiscoverySearch, resolution: SeedResolution | None =
     summary = None
     if prefer_seed_artist is not None and resolution.track is not None:
         selected, summary = select_artist_mix(ranked, resolution.track, state.limit, prefer_seed_artist)
+        # Bare genre searches can favor songs with that word in their title. Try one
+        # metadata-derived alternative before backfilling, within the same provider budget.
+        if ("other_artists" in summary.shortfalls and related_query
+                and len(state.searches) < getattr(state.registry, "max_discovery_operations", MAX_DISCOVERY_OPERATIONS)):
+            state.query(f"{related_query[:115]} hits")
+            search = state.search
+            candidates = _recording_candidates(search.tracks)
+            recalled = rank_related(candidates, resolution.track, state.profile)
+            ranked = [item for item in recalled if constraints.matches(item.track)] if constraints else recalled
+            selected, summary = select_artist_mix(ranked, resolution.track, state.limit, prefer_seed_artist)
     else:
         selected = rerank_diverse(ranked, state.limit)
         if prefer_seed_artist is not None:
