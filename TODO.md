@@ -1,5 +1,23 @@
 # TODO
 
+## Seed artist preference / 原唱偏好（approved 2026-10-13）
+
+- [x] 1. Backend contract and deterministic 70% / 20% selection.
+- [ ] 2. Homepage switch, browser persistence and cancellation-safe refresh.
+- [ ] 3. Integrated browser acceptance and bilingual current-state documentation.
+
+Execute sequentially, failing regressions first, one focused commit per item. Scope: target
+discovery API/domain, homepage client, tests and docs; preserve legacy and assistant policy.
+Optional strict `prefer_seed_artist` keeps omitted-field clients compatible. Round half up;
+fill shortages from the other eligible group and report actual counts. No new dependencies
+or migrations. Verify API pytest/Ruff/compile, web tests/lint/types/build, desktop/mobile
+real-song browser flows and `python scripts/legacy_smoke.py`.
+
+Item 1 acceptance: 24 new regressions failed before implementation; 57 focused domain/API
+tests and 375 full API tests passed. Additional model-confirmation parameterization then passed
+all 64 identification tests (including both switch states). Ruff/compile and legacy help/HTTP
+smoke passed. Backend-only state at this checkpoint; no live homepage acceptance claimed.
+
 ## CI provider test isolation / CI 音乐来源测试环境隔离
 
 - [x] Isolate the default-provider test from inherited global/QQ environment switches,

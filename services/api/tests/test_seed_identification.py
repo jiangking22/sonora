@@ -112,22 +112,28 @@ def assert_identification_budget(registry, model):
     assert all(1 <= limit <= 25 and 1 <= len(query) <= 120 for query, limit in registry.calls)
 
 
-def test_model_identifies_an_original_artist_already_in_the_first_catalog_page(identification_case):
+@pytest.mark.parametrize("preference", [None, True, False])
+def test_model_identifies_an_original_artist_already_in_the_first_catalog_page(identification_case, preference):
     second = track("Shared Title", "Second", popularity=1)
     client, registry, model = identification_case({
         "Shared Title": [track("Shared Title", "First", popularity=100), second],
         "Second": [second, track("Neighbour", "Second")],
     })
-    body = discover(client)
+    body = discover(client, prefer_seed_artist=preference)
     assert body["seed_status"] == "matched"
     assert body["seed_resolution_source"] == "model"
     assert body["seed_track"] == second.model_dump(mode="json")
     assert body["requires_confirmation"] is True
+    if preference is not None:
+        assert body["artist_preference"]["applied"] is False
+        assert body["artist_preference"]["not_applied_reason"] == "confirmation_required"
     assert body["items"] == []
     assert [query for query, _ in registry.calls] == ["Shared Title"]
     assert_identification_budget(registry, model)
-    confirmed = discover(client, seed_artist="Second")
+    confirmed = discover(client, seed_artist="Second", prefer_seed_artist=preference)
     assert confirmed["requires_confirmation"] is False
+    if preference is not None:
+        assert confirmed["artist_preference"]["applied"] is True
     assert [item["title"] for item in confirmed["items"]] == ["Neighbour"]
     assert len(model.identify_calls) == 1
 

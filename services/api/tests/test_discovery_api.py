@@ -134,6 +134,28 @@ def test_discovery_validates_external_input(discovery_client, extra):
     assert response.json()["error"]["code"] == "validation_error"
 
 
+@pytest.mark.parametrize("invalid", ["true", "false", 0, 1, [], {}])
+def test_artist_preference_requires_a_real_boolean(discovery_client, invalid):
+    response = discovery_client.post("/v1/recommendations/discover", json={
+        "seed": "我好想你", "prefer_seed_artist": invalid})
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "validation_error"
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_discovery_reports_applied_preference_and_actual_shortages(discovery_client, enabled):
+    response = discovery_client.post("/v1/recommendations/discover", json={
+        "seed": "我好想你", "limit": 5, "prefer_seed_artist": enabled})
+    assert response.status_code == 200
+    summary = response.json()["artist_preference"]
+    assert summary["applied"] is True
+    assert summary["prefer_seed_artist"] is enabled
+    assert summary["target_same_artist"] == (4 if enabled else 1)
+    assert summary["same_artist_count"] == 1
+    assert summary["other_artist_count"] == 0
+    assert "other_artists" in summary["shortfalls"]
+
+
 def test_discovery_rejects_fifth_active_request_and_recovers(discovery_client):
     async def exercise():
         entered = asyncio.Event()

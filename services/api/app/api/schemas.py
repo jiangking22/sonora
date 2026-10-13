@@ -4,11 +4,13 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    StrictBool,
     StringConstraints,
     field_validator,
     model_validator,
 )
 
+from app.domain.artist_preference import ArtistPreferenceSummary
 from app.domain.listening import AttributeEvidence
 from app.domain.music import (
     ProviderCapabilities,
@@ -62,6 +64,7 @@ class RecommendationResponse(BaseModel):
 
 
 class DiscoveryRequest(RecommendationRequest):
+    prefer_seed_artist: StrictBool | None = None
     language: Literal["en", "zh"] = "en"
     seed_artist: str | None = Field(default=None, min_length=1, max_length=200)
     seed_storefront: Literal["TW", "HK"] | None = None
@@ -81,6 +84,7 @@ class DiscoveryRequest(RecommendationRequest):
 
 
 class DiscoveryResponse(RecommendationResponse):
+    artist_preference: ArtistPreferenceSummary | None = None
     requires_confirmation: bool = False
     seed_track: Track | None = None
     seed_candidates: list[Track] = Field(default_factory=list, max_length=5)

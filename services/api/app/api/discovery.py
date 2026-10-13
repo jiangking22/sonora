@@ -17,6 +17,7 @@ from app.api.schemas import (
 )
 from app.auth.dependencies import CurrentIdentity
 from app.domain.artist_names import enrich_track
+from app.domain.artist_preference import ArtistPreferenceSummary
 from app.domain.discovery import original_hint
 from app.domain.music import SearchResult
 from app.domain.profile import PreferenceProfile
@@ -156,12 +157,16 @@ async def discovery(
                     # Catalog evidence verifies a recording, not the user's intended artist.
                     # Do not recall or rank until the user supplies the confirmed artist.
                     return DiscoveryResult([], state.search, resolution.track,
-                                           resolution.candidates, resolution.status)
-                return finish_discovery(state, resolution, allow_theme=theme)
+                        resolution.candidates, resolution.status,
+                        artist_preference=(ArtistPreferenceSummary(request.prefer_seed_artist,
+                            not_applied_reason="confirmation_required") if request.prefer_seed_artist is not None else None))
+                return finish_discovery(state, resolution, allow_theme=theme,
+                                        prefer_seed_artist=request.prefer_seed_artist)
 
             async with asyncio.timeout(max(0.001, 37 - compute_seconds)):
                 result = await run_blocking(finish)
             response = DiscoveryResponse(
+                artist_preference=result.artist_preference,
                 request_id=request_id(),
                 items=[RecommendationItem(id=item.key, title=item.track.title,
                     artist=item.track.artist.name, explanation=item.explanation, track=enrich_track(item.track),
