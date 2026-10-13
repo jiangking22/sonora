@@ -248,6 +248,7 @@ export function recommendationExplanation(item: Pick<RecommendationItem, "explan
   if (language === "en") return item.explanation;
   const scores = item.score_breakdown;
   const reasons: string[] = [];
+  if (item.explanation.includes("broader catalog exploration")) reasons.push("放宽匹配条件后的其他歌手探索推荐");
   const positives: Record<string, string> = {
     seed_relevance: "符合输入线索", seed_artist: "来自起点歌曲的歌手", seed_genre: "与起点歌曲曲风相近",
     seed_tag: "与起点歌曲标签相近", seed_language: "与起点歌曲语言相同",

@@ -237,6 +237,8 @@ Embeddings and RAG do not silently enter ranking. No LLM ranks songs. / 向量�
 
 **Seed artist preference** defaults on and remembers this browser's choice. On targets about
 70% from the identified/confirmed song artist; off targets about 20%, prioritizing other artists.
+When strict matches are insufficient, off mode fills slots using broader real-catalog discovery,
+including songs without shared genre/tag metadata, labelled as exploration recommendations.
 For 3/5/10 results the same-artist targets are 2/4/7 on and 1/1/2 off. Switching refreshes a
 confirmed song immediately; an unsubmitted input edit waits for **Find music**. Each mix shows
 its own preference, actual counts and candidate shortages. When on, eligible tracks from the other
@@ -250,6 +252,7 @@ search budget before filling gaps; when off, additional distinct metadata/peer-a
 continue until full or exhausted. Relevance filters and deadlines remain in force.
 
 **原唱偏好**默认开启，并记住本浏览器选择。开启目标约七成同歌手，关闭约两成，优先探索其他歌手。
+关闭时严格匹配不足，会从真实曲库探索其他歌手补满，允许缺少共同曲风／标签，并明确标注为放宽匹配推荐。
 推荐 3／5／10 首时，同歌手目标分别为开启 2／4／7 首、关闭 1／1／2 首。已确认歌曲切换后立即刷新；
 修改输入但尚未提交时只更新设置。每批结果展示生成时的偏好、实际数量及候选不足说明。开启时允许另一类相关歌曲
 补足；关闭时同歌手数量不超过原请求配额，不足则继续按曲风、标签及相关歌手扩展检索，

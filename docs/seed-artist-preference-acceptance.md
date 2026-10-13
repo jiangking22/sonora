@@ -6,6 +6,19 @@ This is local acceptance, not a remote deployment or a guarantee about future ca
 
 ## Automated verification / 自动验证
 
+ADR-042 sparse-metadata correction: 400 API / 105 Web tests and all lint/type/build/compile
+checks pass, plus legacy smoke. Three sparse-metadata count tests (3/5/10) and one Chinese
+exploration-label test failed before implementation. Earlier strict eligibility-only policy
+is now superseded for explicitly labelled other-artist exploration after strict selection.
+
+Live browser acceptance uses the exact reported seed 好想爱这个世界啊, confirmed 华晨宇,
+NetEase metadata with empty genres/tags, preference off and requested count five. It now
+returns five unique songs: one same artist and four other artists, no shortage, seven external
+operations. These were real provider responses, not intercepted fixtures. Mobile screenshot
+inspected; no horizontal overflow/page exceptions. Local images updated and healthy; temporary
+QA account removed after sign-out. Exploration fills are intentionally broader recommendations,
+not claims of measured musical similarity.
+
 ADR-041 follow-up: 397 API / 104 Web tests pass; Ruff/compile, ESLint/types/build and
 legacy smoke pass. Six backend regressions and two UI assertions failed before the change.
 Fixed catalogs prove continued search fills 3/5/10 after the initial supplementary query

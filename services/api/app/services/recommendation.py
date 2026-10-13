@@ -188,6 +188,25 @@ def _other_artist_queries(seed: Track, related_query: str, ranked: list[RankedTr
     return queries + list(peers.values())[:8]
 
 
+def _exploration_queries(seed: Track) -> list[str]:
+    chinese = seed.language == "zh" or any("\u4e00" <= char <= "\u9fff" for char in seed.title)
+    return ["华语 流行", "热门歌曲"] if chinese else ["popular songs", "pop hits"]
+
+
+def _fill_exploration(selected, summary, candidates, state, seed, constraints):
+    existing = {item.key for item in selected}
+    broader = [item for item in rank_related(candidates, seed, state.profile, exploration=True)
+               if item.key not in existing
+               and item.track.source.provider != "fixture"
+               and artist_identity(item.track.artist.name) != artist_identity(seed.artist.name)
+               and (not constraints or constraints.matches(item.track))]
+    additions = rerank_diverse(broader, state.limit - len(selected))
+    other_count = summary.other_artist_count + len(additions)
+    shortfalls = [reason for reason in summary.shortfalls
+                 if reason != "other_artists" or other_count < state.limit - summary.target_same_artist]
+    return selected + additions, replace(summary, other_artist_count=other_count, shortfalls=shortfalls)
+
+
 def finish_discovery(state: DiscoverySearch, resolution: SeedResolution | None = None,
                      *, allow_theme: bool = False, constraints: ListeningConstraints | None = None,
                      prefer_seed_artist: bool | None = None) -> DiscoveryResult:
@@ -223,6 +242,7 @@ def finish_discovery(state: DiscoverySearch, resolution: SeedResolution | None =
         # they must fill a missing same-artist quota. All searches share the existing budget.
         attempted = {normalize_text(value[:120]) for value in
                      (state.seed, resolution.track.artist.name, related_query) if value}
+        exploration_pool = []
         while len(state.searches) < getattr(state.registry, "max_discovery_operations", MAX_DISCOVERY_OPERATIONS):
             if getattr(state.registry, "end_reason", None) in {"deadline", "budget_exhausted"}:
                 break
@@ -230,16 +250,25 @@ def finish_discovery(state: DiscoverySearch, resolution: SeedResolution | None =
                 queries = [f"{related_query[:115]} hits"] if related_query and "other_artists" in summary.shortfalls else []
             else:
                 queries = _other_artist_queries(resolution.track, related_query, ranked) if len(selected) < state.limit else []
+                if len(selected) < state.limit:
+                    # Reserve early recall opportunities for filling sparse metadata cases.
+                    queries = queries[:1] + _exploration_queries(resolution.track) + queries[1:]
             query = next((query for query in queries if normalize_text(query[:120]) not in attempted), None)
             if query is None:
                 break
             attempted.add(normalize_text(query[:120]))
+            previous_keys = {track.canonical_key for track in search.tracks}
             state.query(query)
             search = state.search
+            if prefer_seed_artist is False and query in _exploration_queries(resolution.track):
+                exploration_pool.extend(track for track in search.tracks if track.canonical_key not in previous_keys)
             candidates = _recording_candidates(search.tracks)
             recalled = rank_related(candidates, resolution.track, state.profile)
             ranked = [item for item in recalled if constraints.matches(item.track)] if constraints else recalled
             selected, summary = select_artist_mix(ranked, resolution.track, state.limit, prefer_seed_artist)
+            if exploration_pool:
+                selected, summary = _fill_exploration(selected, summary, _recording_candidates(exploration_pool),
+                                                       state, resolution.track, constraints)
     else:
         selected = rerank_diverse(ranked, state.limit)
         if prefer_seed_artist is not None:

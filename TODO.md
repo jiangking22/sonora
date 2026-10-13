@@ -1,5 +1,17 @@
 # TODO
 
+## Sparse metadata exploration / 稀疏元数据补满
+
+- [x] Reproduce 好想爱这个世界啊 with five results and disabled preference; add real-catalog
+  exploration fallback when strict metadata matches are insufficient. Preserve artist caps,
+  deduplication and recording exclusions; label broader matches honestly. Test first, run full
+  API/Web checks and live browser verification, update docs and commit.
+
+Acceptance: 400 API / 105 Web tests, lint/types/build/compile and legacy smoke pass.
+Real Edge flow for 好想爱这个世界啊 (NetEase, empty genres/tags, confirmed 华晨宇) returns
+five tracks: one same artist and four other artists, no shortfall, seven external operations.
+Mobile screenshot inspected; no overflow/page exceptions. Local services updated, QA account removed.
+
 ## Fill disabled-preference requests with other artists / 关闭偏好时继续补满
 
 - [x] Continue bounded metadata and related-artist recall until the requested count is met,

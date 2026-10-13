@@ -18,6 +18,26 @@ def catalog(same=10, other=10, *, metadata=True):
                             "folk": result(others)})
 
 
+@pytest.mark.parametrize("limit", [3, 5, 10])
+def test_sparse_metadata_uses_real_other_artist_exploration_to_fill(limit):
+    registry = CatalogRegistry({
+        "好想爱这个世界啊": result([song("好想爱这个世界啊", "华晨宇")]),
+        "华晨宇": result([song("Here We Are", "华晨宇")]),
+        "华语 流行": result([song(f"探索歌曲 {i}", f"其他歌手 {i}") for i in range(12)] + [
+            song("好想爱这个世界啊", "翻唱歌手"), song("其他歌曲 (Live)", "现场歌手")]),
+    })
+    registry.max_discovery_operations = 24
+    response = discover("好想爱这个世界啊", limit, registry, prefer_seed_artist=False)
+    assert len(response.items) == limit
+    assert response.artist_preference.same_artist_count == 1
+    assert response.artist_preference.other_artist_count == limit - 1
+    assert len({item.key for item in response.items}) == limit
+    assert all(item.track.title not in {"好想爱这个世界啊", "其他歌曲 (Live)"} for item in response.items)
+    broader = [item for item in response.items if item.track.artist.name != "华晨宇"]
+    assert all("broader catalog exploration" in item.explanation for item in broader)
+    assert response.items == discover("好想爱这个世界啊", limit, registry, prefer_seed_artist=False).items
+
+
 @pytest.mark.parametrize("enabled,limit,expected", [
     (True, 3, 2), (True, 5, 4), (True, 10, 7),
     (False, 3, 1), (False, 5, 1), (False, 10, 2),
@@ -65,10 +85,10 @@ def test_recall_order_changes_without_increasing_budget(enabled, queries):
     assert all(limit <= 25 for _, limit in registry.calls)
 
 
-def test_no_metadata_does_not_invent_queries_and_reports_shortage():
+def test_no_metadata_uses_explicit_exploration_query_and_reports_source_failure():
     registry = catalog(metadata=False)
     response = discover("Anchor", 5, registry, prefer_seed_artist=False)
-    assert [query for query, _ in registry.calls] == ["Anchor", "Faye Wong"]
+    assert [query for query, _ in registry.calls] == ["Anchor", "Faye Wong", "华语 流行"]
     assert response.artist_preference.same_artist_count == 1
     assert len(response.items) == 1
     assert response.artist_preference.shortfalls == ["other_artists"]
@@ -115,7 +135,7 @@ def test_supplementary_recall_stops_after_distinct_metadata_queries_are_exhauste
     registry = catalog(other=0)
     registry.max_discovery_operations = 24
     response = discover("Anchor", 10, registry, prefer_seed_artist=False)
-    assert len(registry.calls) == 5
+    assert len(registry.calls) == 7
     assert registry.calls[-1][0] == "folk songs"
     assert response.artist_preference.shortfalls == ["other_artists"]
     assert response.artist_preference.same_artist_count == 2
@@ -134,7 +154,7 @@ def test_disabled_recall_continues_until_other_artists_fill_requested_count(limi
     assert response.artist_preference.same_artist_count == cap
     assert response.artist_preference.other_artist_count == limit - cap
     assert response.artist_preference.shortfalls == []
-    assert len(registry.calls) == 5
+    assert len(registry.calls) == 7
 
 
 def test_disabled_recall_expands_verified_related_artists_to_fill_even_without_own_tracks():

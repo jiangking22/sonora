@@ -155,12 +155,12 @@ def _same_seed_title(seed: Track, track: Track) -> bool:
 
 
 def rank_related(candidates: list[Candidate], seed: Track,
-                 profile: PreferenceProfile) -> list[RankedTrack]:
+                 profile: PreferenceProfile, *, exploration: bool = False) -> list[RankedTrack]:
     related = [candidate for candidate in candidates
                if not _same_seed_title(seed, candidate.track)
                and not is_alternate(candidate.track)
-               and any(value > 0 for key, value in related_factors(seed, candidate.track).items()
-                       if key != "seed_language")]
+               and (exploration or any(value > 0 for key, value in related_factors(seed, candidate.track).items()
+                       if key != "seed_language"))]
     output = []
     # The existing profile/popularity/source policy remains authoritative alongside explicit
     # seed-context weights; the input title itself cannot reward repeated recordings.
@@ -169,6 +169,8 @@ def rank_related(candidates: list[Candidate], seed: Track,
         breakdown = {**item.score_breakdown,
                      **{name: round(value * SEED_WEIGHTS[name], 6) for name, value in factors.items()}}
         reasons = []
+        if exploration and not any(factors[key] > 0 for key in ("seed_artist", "seed_genre", "seed_tag")):
+            reasons.append("broader catalog exploration")
         for name, reason in (("seed_artist", "same artist as your seed"),
                              ("seed_genre", "shares a genre with your seed"),
                              ("seed_tag", "shares a tag with your seed"),

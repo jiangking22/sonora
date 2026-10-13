@@ -3,6 +3,10 @@ import { factorLabel, recommendationExplanation } from "../lib/i18n";
 import type { RecommendationItem } from "../types/music";
 
 describe("canonical recommendation explanations", () => {
+  it("labels broader exploration without claiming shared musical features", () => {
+    expect(recommendationExplanation({ explanation: "broader catalog exploration", score_breakdown: {} }, "zh"))
+      .toBe("放宽匹配条件后的其他歌手探索推荐");
+  });
   it("translates measured seed factors and negative feedback without claiming an original recording", () => {
     const item = {
       explanation: "related musical attributes; less aligned with past feedback",

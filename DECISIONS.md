@@ -1,5 +1,20 @@
 # Architecture Decision Records / 架构决策记录
 
+## ADR-042: Broader real-catalog exploration for sparse seed metadata
+
+**Status:** Implemented; user-authorized relaxation of ADR-041's strict relation gate.
+**Date:** 2026-10-13
+
+好想爱这个世界啊 exposed a metadata dead end: no genre/tag means no eligible peer artist.
+Disabled preference now reserves early query opportunities for broad catalog discovery
+(Chinese/popular-song queries chosen by known language or title script, not asserted genre).
+Strict matches are selected first; remaining slots use newly recalled real recordings from
+these exploration queries. Other-artist identity, title/version exclusions, deduplication,
+explicit listening constraints and shared provider limits remain mandatory. No fixtures.
+Exploration candidates retain deterministic profile/source ranking and carry an explicit
+broader-exploration explanation in English and Chinese; no shared genre is fabricated.
+Enabled/omitted policies remain unchanged. No dependencies or migrations.
+
 ## ADR-041: Continue other-artist recall to fill disabled-preference requests
 
 **Status:** Accepted and implemented; supersedes ADR-040's early shortage stopping behavior.

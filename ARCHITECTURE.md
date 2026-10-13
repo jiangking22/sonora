@@ -12,6 +12,9 @@ When disabled, same-artist tracks are capped at the rounded 20% requested-count 
 shortages never cause same-artist backfill (ADR-040). Disabled requests continue distinct
 metadata queries and eligible peer-artist searches until full, or the available queries/shared
 deadline/budget are exhausted (ADR-041). Provider exhaustion is reported honestly with retry copy.
+ADR-042 adds early broad catalog queries when disabled results are short. Strict matches remain
+first; newly recalled other-artist recordings fill gaps without requiring shared genre/tag metadata.
+These exploration results are labelled, with title/version filters, constraints and artist caps intact.
 Omitted/null values retain the previous policy. The homepage sends an explicit boolean, defaults
 on and persists it in browser storage. Request snapshots preserve confirmed recording identity;
 switching cancels in-flight work and ignores stale replies. Dirty inputs wait for submission.

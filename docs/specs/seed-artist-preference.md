@@ -5,6 +5,11 @@ MCP, authentication and database schema are unchanged. See ADR-039 and the three
 
 ## Behavior / 行为
 
+ADR-042 refinement: disabled preference performs early broad catalog discovery for sparse
+metadata. Preserve strict matches, then fill missing slots from new real other-artist recordings
+without requiring shared genre/tag evidence. Label these as broader exploration; retain
+artist caps, explicit listening constraints, deduplication and seed/version exclusions.
+
 - Default on; persist a boolean under `sonora.prefer-seed-artist` in browser local storage.
   Missing/invalid/unavailable storage defaults on; storage failure never blocks discovery.
 - On/off targets 70%/20% same-artist results, integer round-half-up against the requested limit.
