@@ -41,7 +41,9 @@ def test_explicit_mix_survives_strong_affinity_and_preserves_identity(enabled, l
 
 @pytest.mark.parametrize("same,other,enabled,count,same_count,shortfalls", [
     (1, 10, True, 10, 1, ["same_artist"]),
-    (10, 1, False, 10, 9, ["other_artists"]),
+    (10, 1, False, 3, 2, ["other_artists"]),
+    (10, 1, True, 10, 9, ["other_artists"]),
+    (0, 10, False, 10, 0, ["same_artist"]),
     (1, 1, True, 2, 1, ["same_artist", "other_artists"]),
     (0, 0, False, 0, 0, ["same_artist", "other_artists"]),
 ])
@@ -67,7 +69,8 @@ def test_no_metadata_does_not_invent_queries_and_reports_shortage():
     registry = catalog(metadata=False)
     response = discover("Anchor", 5, registry, prefer_seed_artist=False)
     assert [query for query, _ in registry.calls] == ["Anchor", "Faye Wong"]
-    assert response.artist_preference.same_artist_count == 5
+    assert response.artist_preference.same_artist_count == 1
+    assert len(response.items) == 1
     assert response.artist_preference.shortfalls == ["other_artists"]
 
 
@@ -114,4 +117,18 @@ def test_supplementary_recall_is_at_most_once_even_when_no_more_matches_exist():
     response = discover("Anchor", 10, registry, prefer_seed_artist=False)
     assert len(registry.calls) == 4
     assert response.artist_preference.shortfalls == ["other_artists"]
-    assert response.artist_preference.same_artist_count == 10
+    assert response.artist_preference.same_artist_count == 2
+    assert len(response.items) == 2
+
+
+@pytest.mark.parametrize("limit,cap", [(3, 1), (5, 1), (10, 2)])
+@pytest.mark.parametrize("other", [0, 1])
+def test_disabled_shortage_never_exceeds_original_same_artist_quota(limit, cap, other):
+    response = discover("Anchor", limit, catalog(other=other),
+                        PreferenceProfile(artist_affinity={"王菲": 1000}),
+                        prefer_seed_artist=False)
+    assert len(response.items) == cap + other
+    assert sum(artist_identity(item.track.artist.name) == artist_identity("Faye Wong")
+               for item in response.items) == cap
+    assert response.artist_preference.other_artist_count == other
+    assert response.artist_preference.shortfalls == ["other_artists"]

@@ -1,5 +1,19 @@
 # Architecture Decision Records / 架构决策记录
 
+## ADR-040: No same-artist backfill when preference is disabled
+
+**Status:** Accepted and implemented, user refinement of ADR-039 shortage policy.
+**Date:** 2026-10-13
+
+Disabled preference retains its rounded 20% quota against the requested count, but caps
+same-artist selection at that quota even when other artists are scarce. Only other artists
+may fill remaining slots; return fewer results if they are unavailable. Enabled and omitted
+policies remain unchanged. Counts and shortage reasons retain the existing response contract;
+bilingual UI copy explains the reduced count. No dependencies or migrations.
+
+关闭时同歌手最多为请求数量的约两成（3/5/10 首对应 1/1/2 首），不得用同歌手补位。
+其他歌手不足则少返回；实际返回列表的比例可能不同于请求目标。
+
 ## ADR-039: Explicit seed-artist allocation in homepage discovery
 
 **Status:** Accepted and implemented; local desktop/mobile real-catalog acceptance passed.

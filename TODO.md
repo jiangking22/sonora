@@ -1,5 +1,16 @@
 # TODO
 
+## Disabled preference shortage / 关闭偏好时禁止同歌手补位
+
+- [x] Cap same-artist selection at the original 20% requested-count quota when disabled;
+  return fewer tracks when other artists are scarce. Update bilingual hints and regression tests.
+  Scope: allocator, result copy, tests and docs. Verify API pytest/Ruff/compile, Web
+  tests/lint/types/build, browser shortage rendering and legacy smoke.
+
+Acceptance: 391 API / 104 Web tests and all listed checks pass. Live Dreams switch returns
+7/3 on and 2/8 off; controlled shortage responses verify desktop English/mobile Chinese
+copy. Local images updated, four services healthy; disposable QA account removed.
+
 ## Seed artist preference / 原唱偏好（approved 2026-10-13）
 
 - [x] 1. Backend contract and deterministic 70% / 20% selection.
@@ -13,7 +24,8 @@ budget permits it; preserve eligibility and omitted-field behavior. Guard with f
 Execute sequentially, failing regressions first, one focused commit per item. Scope: target
 discovery API/domain, homepage client, tests and docs; preserve legacy and assistant policy.
 Optional strict `prefer_seed_artist` keeps omitted-field clients compatible. Round half up;
-fill shortages from the other eligible group and report actual counts. No new dependencies
+fill shortages from the other eligible group and report actual counts (disabled backfill
+subsequently restricted by ADR-040 above). No new dependencies
 or migrations. Verify API pytest/Ruff/compile, web tests/lint/types/build, desktop/mobile
 real-song browser flows and `python scripts/legacy_smoke.py`.
 

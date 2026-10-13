@@ -18,16 +18,18 @@ MCP, authentication and database schema are unchanged. See ADR-039 and the three
 - If other-artist candidates remain short and search budget remains, try one metadata-derived
   `<genre/tag> hits` query before backfilling. No such query runs for omitted preference, full
   groups or missing metadata. Provider deadlines and operation/result caps remain authoritative.
-- Fill a group's shortage with eligible remaining tracks from the other group; if both are short,
-  return fewer. Never pad a song result with unrelated tracks or fixtures. Report real counts.
+- When enabled, fill a group's shortage with eligible tracks from the other group. When disabled,
+  cap same-artist tracks at the rounded 20% requested-count quota; only other artists may fill
+  remaining slots. Return fewer if unavailable. Never pad with unrelated tracks or fixtures.
 - Switch refreshes confirmed results; pending requests are cancelled and late success/error replies
   ignored. Request snapshots include seed, artist/proof/storefront, limit, language and preference.
   Unsubmitted input edits wait for submission; unresolved/theme results do not refresh on a switch.
 - Retain artist and proof together on repeat submission. Expired proof is dropped on retry/switch,
   retaining the selected artist for fresh catalog validation. Loading and errors hide old results.
 
-默认开启并记住浏览器选择；开启约七成、关闭约两成同歌手。按合格候选分组选曲，缺口可互补，
-不足则如实少返回。身份确认、来源证据、版本过滤、历史反馈评分和确定性排序均保留。
+默认开启并记住浏览器选择；开启约七成、关闭最多为请求数量的约两成同歌手。
+关闭时禁止同歌手补位，其他歌手不足则少返回（ADR-040）。开启时仍允许合格候选互补。
+身份确认、来源证据、版本过滤、历史反馈评分和确定性排序均保留。
 
 ## Contract / 契约
 

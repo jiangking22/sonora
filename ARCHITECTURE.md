@@ -8,6 +8,8 @@ existing eligibility and within-group diverse ranking. Additive `artist_preferen
 actual counts, target and shortages; unresolved/theme/confirmation states do not apply a mix.
 When other-artist candidates are short, one metadata-derived `<genre/tag> hits` query may use
 remaining search budget before cross-group filling; eligibility and all deadline/call caps remain.
+When disabled, same-artist tracks are capped at the rounded 20% requested-count quota:
+other-artist shortages return fewer results and never cause same-artist backfill (ADR-040).
 Omitted/null values retain the previous policy. The homepage sends an explicit boolean, defaults
 on and persists it in browser storage. Request snapshots preserve confirmed recording identity;
 switching cancels in-flight work and ignores stale replies. Dirty inputs wait for submission.

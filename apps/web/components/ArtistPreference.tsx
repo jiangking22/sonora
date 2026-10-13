@@ -31,6 +31,7 @@ export function ArtistPreferenceResult({ summary, language }: {
       ? `同歌手 ${summary.same_artist_count} 首 · 其他歌手 ${summary.other_artist_count} 首`
       : `Same artist: ${summary.same_artist_count} · Other artists: ${summary.other_artist_count}`}</p>
     {summary.shortfalls.length ? <p>{summary.shortfalls.length === 2 ? copy.artistPreferenceBothShort
-      : summary.shortfalls[0] === "same_artist" ? copy.artistPreferenceSameShort : copy.artistPreferenceOtherShort}</p> : null}
+      : summary.shortfalls[0] === "same_artist" ? copy.artistPreferenceSameShort
+      : summary.prefer_seed_artist ? copy.artistPreferenceOtherShort : copy.artistPreferenceOtherShortStrict}</p> : null}
   </div>;
 }

@@ -6,6 +6,19 @@ This is local acceptance, not a remote deployment or a guarantee about future ca
 
 ## Automated verification / 自动验证
 
+ADR-040 follow-up (2026-10-13): 391 API / 104 Web tests pass, plus Ruff, compile,
+ESLint, types, production build and legacy smoke. Nine backend and two bilingual UI
+assertions failed before the fix. Fixed catalogs prove disabled 3/5/10 quotas remain
+capped at 1/1/2 with zero or one other-artist candidates, including strong historical
+affinity and aliases. Enabled backfill and disabled other-artist filling remain covered.
+The following original-feature evidence predates this shortage refinement.
+
+Follow-up runtime: rebuilt local API/Web images and confirmed all four services healthy.
+Live Dreams discovery returned 7/3 on and 2/8 off. A separately intercepted shortage response
+verified the new English desktop and Chinese mobile hint; this UI check does not prove live
+catalog scarcity. No mobile overflow or page exceptions; screenshot inspected. The disposable
+account was signed out and removed. Fixed-catalog API tests prove the actual shortage policy.
+
 - 383 API tests pass, including strict boolean validation, omitted-field compatibility,
   confirmation states, deterministic 3/5/10 ratios, aliases, filtering, shortages and recall budgets.
 - 102 Web tests pass, including 11 preference scenarios: default/persistence, storage failures,
@@ -44,7 +57,7 @@ Temporary accounts and sessions were removed after sign-out; existing user accou
 早期实测中，单独按曲风名检索导致其他歌手合格候选不足：系统正确显示不足并补足数量。
 检查确认录音的 Mandopop 元数据没有丢失，问题在于检索结果缺少匹配标签。最终实现仅在不足且预算
 允许时补查一次基于已有曲风／标签的 hits 查询，保留原筛选规则，随后两首歌均达到开启 7/3、关闭 2/8。
-所有比例均为当次可用曲库实测，候选不足时仍允许跨组补足，并如实提示。
+所有比例均为当次可用曲库实测。当时允许跨组补足；后续 ADR-040 已禁止关闭时用同歌手补位。
 
 NetEase returned `invalid_payload` during the final Chinese-song requests; available catalogs still
 supplied the verified ten-track mixes. Provider failures remain partial-source states. Browser

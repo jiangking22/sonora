@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import ProductClient from "../components/ProductClient";
+import { ArtistPreferenceResult } from "../components/ArtistPreference";
 import type { DiscoveryResponse, Track } from "../types/music";
 
 const api = vi.hoisted(() => ({ discover: vi.fn(), profile: vi.fn(), cancelDiscovery: vi.fn() }));
@@ -21,6 +22,15 @@ beforeEach(() => {
   api.discover.mockResolvedValue(result);
 });
 afterEach(() => vi.restoreAllMocks());
+
+it.each(["en", "zh"] as const)("explains disabled shortages without promising same-artist backfill (%s)", (language) => {
+  render(<ArtistPreferenceResult language={language} summary={{ ...result.artist_preference!,
+    prefer_seed_artist: false, same_artist_count: 1, other_artist_count: 0,
+    shortfalls: ["other_artists"] }} />);
+  expect(screen.getByText(language === "en"
+    ? "Not enough other-artist tracks. Showing fewer results without adding more tracks from the song artist."
+    : "其他歌手候选不足，已减少推荐数量，不使用同歌手作品补位。")).toBeInTheDocument();
+});
 
 async function start() {
   const view = render(<ProductClient />);

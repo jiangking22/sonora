@@ -31,8 +31,9 @@ def select_artist_mix(ranked: list[RankedTrack], seed: Track, limit: int,
         shortfalls.append("same_artist")
     if other_count < limit - target:
         shortfalls.append("other_artists")
-    # Only one group can have spare candidates when a quota is short.
-    same_count = min(len(same), limit - other_count)
+    # Disabled preference caps same-artist tracks at the requested-count quota.
+    if enabled:
+        same_count = min(len(same), limit - other_count)
     other_count = min(len(other), limit - same_count)
     selected = rerank_diverse(same, same_count) + rerank_diverse(other, other_count)
     # This pass orders the selected set; it cannot replace either group's allocation.
