@@ -6,6 +6,15 @@ afterEach(() => vi.unstubAllGlobals());
 beforeEach(testSession);
 
 describe("API client", () => {
+  it("serializes explicit false without changing omitted-preference callers", async () => {
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(new Response(
+      JSON.stringify({ items: [], sources: {} }), { status: 200 })));
+    const api = createApiClient("http://localhost:8000", withCsrf(fetcher));
+    await api.discover("Anchor", 5, "en", undefined, undefined, undefined, undefined, false);
+    expect(JSON.parse(fetcher.mock.calls[0][1].body).prefer_seed_artist).toBe(false);
+    await api.discover("Anchor", 5, "en");
+    expect(JSON.parse(fetcher.mock.calls[1][1].body)).not.toHaveProperty("prefer_seed_artist");
+  });
   it("carries the verified storefront only for explicit confirmation", async () => {
     const fetcher = vi.fn().mockImplementation(() => Promise.resolve(new Response(
       JSON.stringify({ items: [], sources: {} }), { status: 200 })));

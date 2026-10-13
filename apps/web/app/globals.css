@@ -226,6 +226,18 @@ summary:focus-visible {
   padding-bottom: 42px;
   border-bottom: 1px solid var(--line);
 }
+.artist-preference-control { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.artist-preference-switch { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; padding: 4px 0; border: 0; background: none; color: var(--ink); font-size: 13px; font-weight: 700; }
+.switch-track { display: inline-flex; align-items: center; width: 40px; height: 24px; padding: 3px; border-radius: 20px; background: var(--muted); flex-shrink: 0; }
+.switch-track > span { width: 18px; height: 18px; border-radius: 50%; background: var(--soft); }
+.artist-preference-switch[aria-checked="true"] .switch-track { background: var(--orange); }
+.artist-preference-switch[aria-checked="true"] .switch-track > span { transform: translateX(16px); }
+.switch-state { font-weight: 400; }
+.artist-preference-control p, .artist-preference-summary { font-size: 12px; line-height: 1.6; color: var(--ink); }
+.artist-preference-control p { margin: 4px 0 0; max-width: 64ch; }
+.artist-preference-summary { margin: 0 0 16px; padding: 12px 16px; border-left: 2px solid var(--orange); background: var(--paper); }
+.artist-preference-summary p { margin: 0; }
+.artist-preference-summary p + p { margin-top: 4px; }
 .form-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 128px 155px;

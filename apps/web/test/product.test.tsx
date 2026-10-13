@@ -99,7 +99,7 @@ describe("original candidate rejection", () => {
     api.discover.mockResolvedValueOnce({ ...result, seed_status: "matched", seed_track: newTrack });
     fireEvent.click(screen.getByRole("button", { name: "Confirm and recommend" }));
     await screen.findByText("Night Signal");
-    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Another Artist");
+    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Another Artist", undefined, undefined, undefined, true);
     expect(screen.getByText("Model suggestion, confirmed by you.")).toBeInTheDocument();
   });
 
@@ -138,15 +138,15 @@ describe("original candidate rejection", () => {
     api.discover.mockResolvedValue({ ...result, seed_status: "matched", seed_track: verified, seed_storefront: "TW" });
     fireEvent.click(screen.getByRole("button", { name: "Confirm and recommend" }));
     await screen.findByText("Night Signal");
-    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Another Artist", "TW");
+    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Another Artist", "TW", undefined, undefined, true);
     fireEvent.click(screen.getByRole("button", { name: /^like night signal$/i }));
     fireEvent.click(await screen.findByRole("button", { name: /refresh recommendations/i }));
     await waitFor(() => expect(api.discover).toHaveBeenCalledTimes(3));
-    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Another Artist", "TW");
+    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Another Artist", "TW", undefined, undefined, true);
     await waitFor(() => expect(screen.getByRole("button", { name: /find music/i })).toBeEnabled());
     fireEvent.change(screen.getByLabelText(/song or mood/i), { target: { value: "New Title" } });
     fireEvent.click(screen.getByRole("button", { name: /find music/i }));
-    await waitFor(() => expect(api.discover).toHaveBeenLastCalledWith("New Title", 5, "en", undefined));
+    await waitFor(() => expect(api.discover).toHaveBeenLastCalledWith("New Title", 5, "en", undefined, undefined, undefined, undefined, true));
   });
 
   it("offers the real QQ recording evidence and confirms through the existing multi-source discovery", async () => {
@@ -161,7 +161,7 @@ describe("original candidate rejection", () => {
     api.discover.mockResolvedValue({ ...result, seed_status: "matched", seed_track: qqTrack });
     fireEvent.click(screen.getByRole("button", { name: "Confirm and recommend" }));
     await screen.findByText("Night Signal");
-    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Another Artist");
+    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Another Artist", undefined, undefined, undefined, true);
   });
 
   it("keeps choices after a failure and allows a translated manual retry", async () => {
@@ -222,7 +222,7 @@ describe("original candidate rejection", () => {
     await screen.findByRole("alert");
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByText("Model suggestion, confirmed by you.")).toBeInTheDocument();
-    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Another Artist");
+    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Another Artist", undefined, undefined, undefined, true);
     fireEvent.click(screen.getByRole("button", { name: "切换为中文" }));
     expect(screen.getByText("模型建议，经用户确认")).toBeInTheDocument();
     expect(api.identifyOriginal).toHaveBeenCalledTimes(1);
@@ -250,7 +250,7 @@ describe("all model artists require confirmation", () => {
     api.discover.mockResolvedValueOnce({ ...result, seed_track: suggested, seed_status: "matched" });
     fireEvent.click(screen.getByRole("button", { name: "Confirm and recommend" }));
     await screen.findByText("Night Signal");
-    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Mira Vale", undefined, "model-proof");
+    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Mira Vale", undefined, "model-proof", undefined, true);
     expect(screen.getByText("Model suggestion, confirmed by you.")).toBeInTheDocument();
   });
   it("verifies a supplied artist across sources and only recommends after selecting that recording", async () => {
@@ -269,7 +269,7 @@ describe("all model artists require confirmation", () => {
     api.discover.mockResolvedValueOnce({ ...result, seed_status: "matched", seed_track: corrected });
     fireEvent.click(screen.getByRole("button", { name: "Confirm and recommend" }));
     await screen.findByText("Night Signal");
-    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Correct Artist", undefined, "correct-proof");
+    expect(api.discover).toHaveBeenLastCalledWith("Shared Title", 5, "en", "Correct Artist", undefined, "correct-proof", undefined, true);
     expect(screen.queryByText("Model suggestion, confirmed by you.")).not.toBeInTheDocument();
   });
   it("cancels manual correction on a new search and ignores its late recording", async () => {
@@ -287,7 +287,7 @@ describe("all model artists require confirmation", () => {
     await act(async () => release({ request_id: "late", status: "matched", matched_track: corrected,
       resolution_id: "late-proof", candidates: [], sources: {} }));
     expect(screen.queryByText("Shared Title · Correct Artist")).not.toBeInTheDocument();
-    expect(api.discover).toHaveBeenLastCalledWith("New Query", 5, "en", undefined);
+    expect(api.discover).toHaveBeenLastCalledWith("New Query", 5, "en", undefined, undefined, undefined, undefined, true);
   });
 });
 
@@ -430,7 +430,7 @@ describe("recommendation home", () => {
     fireEvent.change(screen.getByLabelText("歌曲或心情"), { target: { value: "我好想你" } });
     fireEvent.click(screen.getByRole("button", { name: /发现音乐/ }));
     await screen.findByText("Night Signal");
-    expect(api.discover).toHaveBeenCalledWith("我好想你", 5, "zh", undefined);
+    expect(api.discover).toHaveBeenCalledWith("我好想你", 5, "zh", undefined, undefined, undefined, undefined, true);
     fireEvent.click(screen.getByRole("button", { name: "Switch to English" }));
     expect(localStorage.getItem("sonora.interface-language")).toBe("en");
     view.unmount();
@@ -467,7 +467,7 @@ describe("recommendation home", () => {
     fireEvent.click(screen.getByRole("button", { name: "我好想你 · 苏打绿" }));
     await screen.findByText("Based on");
     expect(screen.getByText("我好想你 · 苏打绿")).toBeInTheDocument();
-    expect(api.discover).toHaveBeenLastCalledWith("我好想你", 5, "en", "苏打绿");
+    expect(api.discover).toHaveBeenLastCalledWith("我好想你", 5, "en", "苏打绿", undefined, undefined, undefined, true);
     expect(screen.getByText("Night Signal")).toBeInTheDocument();
     expect(screen.queryByText(/original recording/i)).not.toBeInTheDocument();
   });
@@ -483,11 +483,11 @@ describe("recommendation home", () => {
     await screen.findByText("Night Signal");
     fireEvent.click(screen.getByRole("button", { name: /^like night signal$/i }));
     fireEvent.click(await screen.findByRole("button", { name: /refresh recommendations/i }));
-    await waitFor(() => expect(api.discover).toHaveBeenLastCalledWith("Shared title", 5, "en", "Mira Vale"));
+    await waitFor(() => expect(api.discover).toHaveBeenLastCalledWith("Shared title", 5, "en", "Mira Vale", undefined, undefined, undefined, true));
     await waitFor(() => expect(screen.getByRole("button", { name: /find music/i })).toBeEnabled());
     fireEvent.change(screen.getByLabelText(/song or mood/i), { target: { value: "Another title" } });
     fireEvent.click(screen.getByRole("button", { name: /find music/i }));
-    await waitFor(() => expect(api.discover).toHaveBeenLastCalledWith("Another title", 5, "en", undefined));
+    await waitFor(() => expect(api.discover).toHaveBeenLastCalledWith("Another title", 5, "en", undefined, undefined, undefined, undefined, true));
   });
 
   it("displays artist names while preserving candidate selection and feedback identity", async () => {
@@ -510,7 +510,7 @@ describe("recommendation home", () => {
     fireEvent.click(screen.getByRole("button", { name: "切换为中文" }));
     fireEvent.click(screen.getByRole("button", { name: "匆匆那年 · 王菲" }));
     await screen.findByText("起点歌曲");
-    expect(api.discover).toHaveBeenLastCalledWith("匆匆那年", 5, "zh", "Faye Wong");
+    expect(api.discover).toHaveBeenLastCalledWith("匆匆那年", 5, "zh", "Faye Wong", undefined, undefined, undefined, true);
     expect(screen.getByText("匆匆那年 · 王菲")).toBeInTheDocument();
     expect(screen.getAllByText("王菲")).toHaveLength(2);
     expect(screen.getByText(/以 匆匆那年 · 王菲 为起点/)).toBeInTheDocument();
@@ -538,7 +538,7 @@ describe("recommendation home", () => {
     expect(screen.getByText("模型辅助识别，已匹配曲库")).toBeInTheDocument();
     expect(screen.queryByText("MODEL GUIDANCE IN ENGLISH")).not.toBeInTheDocument();
     expect(screen.getByText(/以 匆匆那年 · 王菲 为起点/)).toBeInTheDocument();
-    expect(screen.queryByText(/原唱/)).not.toBeInTheDocument();
+    expect(screen.queryByText("已核实原唱歌手版本")).not.toBeInTheDocument();
     expect(api.discover).toHaveBeenCalledTimes(1);
   });
 

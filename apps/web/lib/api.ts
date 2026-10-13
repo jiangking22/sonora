@@ -83,7 +83,7 @@ export function createApiClient(
         limit,
       }),
     discover: (seed: string, limit: number, language: InterfaceLanguage, seedArtist?: string, seedStorefront?: VerifiedStorefront,
-      resolutionId?: string, signal?: AbortSignal) => {
+      resolutionId?: string, signal?: AbortSignal, preferSeedArtist?: boolean) => {
       discoveryController?.abort();
       discoveryController = new AbortController();
       return request<DiscoveryResponse>("/v1/recommendations/discover", "POST", {
@@ -93,6 +93,7 @@ export function createApiClient(
         ...(seedArtist ? { seed_artist: seedArtist } : {}),
         ...(seedStorefront ? { seed_storefront: seedStorefront } : {}),
         ...(resolutionId ? { resolution_id: resolutionId } : {}),
+        ...(preferSeedArtist !== undefined ? { prefer_seed_artist: preferSeedArtist } : {}),
       }, 60000, signal ? AbortSignal.any([signal, discoveryController.signal]) : discoveryController.signal);
     },
     resolveRecording: (seed: string, language: InterfaceLanguage, artist?: string, platform?: string,

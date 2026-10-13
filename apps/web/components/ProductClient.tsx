@@ -18,15 +18,31 @@ import RecommendationCard from "./RecommendationCard";
 import ArtistConfirmation from "./ArtistConfirmation";
 import RecordingRecovery from "./RecordingRecovery";
 import SearchReport from "./SearchReport";
+import { ArtistPreferenceControl, ArtistPreferenceResult } from "./ArtistPreference";
+import { readArtistPreference, saveArtistPreference } from "../lib/artist-preference";
 import { safeExternalUrl } from "../lib/url";
 
 const API_BASE = "/api";
+
+type DiscoverySnapshot = {
+  query: string;
+  limit: number;
+  language: InterfaceLanguage;
+  artist?: string;
+  storefront: VerifiedStorefront | null;
+  resolutionId?: string;
+  modelSuggested: boolean;
+  preferSeedArtist: boolean;
+};
 
 export default function ProductClient() {
   const api = useRef<ApiClient | null>(null);
   const [ready, setReady] = useState(false);
   const [seed, setSeed] = useState("");
   const [limit, setLimit] = useState(5);
+  const [preferSeedArtist, setPreferSeedArtist] = useState(true);
+  const lastAttempt = useRef<DiscoverySnapshot | null>(null);
+  const confirmedDiscovery = useRef<DiscoverySnapshot | null>(null);
   const [language, setLanguage] = useState<InterfaceLanguage>("en");
   const [result, setResult] = useState<DiscoveryResponse | null>(null);
   const [resultLanguage, setResultLanguage] = useState<InterfaceLanguage>("en");
@@ -54,6 +70,7 @@ export default function ProductClient() {
     // Browser preference is restored after hydration so the server and first client render agree.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLanguage(readLanguage());
+    setPreferSeedArtist(readArtistPreference());
   }, []);
 
   useEffect(() => {
@@ -107,7 +124,37 @@ export default function ProductClient() {
   async function findMusic(event?: React.FormEvent, artist = selectedArtist, query = seed, modelSuggested = false,
     storefront = selectedStorefront, resolutionId = selectedResolution) {
     event?.preventDefault();
+    return runDiscovery({ query: query.trim(), limit, language, artist, storefront, resolutionId,
+      modelSuggested, preferSeedArtist });
+  }
+
+  function switchArtistPreference() {
+    const next = !preferSeedArtist;
+    setPreferSeedArtist(next);
+    saveArtistPreference(next);
+    const previous = discoveryPending.current ? lastAttempt.current : confirmedDiscovery.current;
+    if (!previous || previous.query !== seed.trim()) return;
+    api.current?.cancelDiscovery?.();
+    discoveryRequest.current += 1;
+    discoveryPending.current = false;
+    void runDiscovery({ ...previous, limit, language, preferSeedArtist: next,
+      resolutionId: resolutionError ? undefined : previous.resolutionId });
+  }
+
+  function retryDiscovery() {
+    const previous = lastAttempt.current;
+    if (previous && previous.query === seed.trim()) {
+      void runDiscovery({ ...previous, preferSeedArtist, language, limit,
+        resolutionId: resolutionError ? undefined : previous.resolutionId });
+    } else {
+      void findMusic();
+    }
+  }
+
+  async function runDiscovery(snapshot: DiscoverySnapshot) {
+    const { query, artist, limit, language, modelSuggested, storefront, resolutionId, preferSeedArtist } = snapshot;
     if (!api.current || !query.trim() || discoveryPending.current) return;
+    lastAttempt.current = snapshot;
     const currentRequest = ++discoveryRequest.current;
     discoveryPending.current = true;
     if (modelSuggested && artist) setConfirmedModelArtist(artist);
@@ -120,16 +167,20 @@ export default function ProductClient() {
       void api.current.profile().then((value) => {
         if (currentRequest === discoveryRequest.current) { setProfile(value); setProfileError(false); }
       }).catch(() => { if (currentRequest === discoveryRequest.current) setProfileError(true); });
-      const response = resolutionId
-        ? await api.current.discover(query.trim(), limit, language, artist, storefront ?? undefined, resolutionId)
-        : storefront
-        ? await api.current.discover(query.trim(), limit, language, artist, storefront)
-        : await api.current.discover(query.trim(), limit, language, artist);
+      const response = await api.current.discover(query, limit, language, artist, storefront ?? undefined,
+        resolutionId, undefined, preferSeedArtist);
       if (currentRequest !== discoveryRequest.current) return;
+      confirmedDiscovery.current = response.seed_status === "matched" && response.seed_track && !response.requires_confirmation
+        ? { ...snapshot, artist: response.seed_track.artist.name, storefront: response.seed_storefront ?? storefront,
+          resolutionId: response.resolution_id ?? resolutionId } : null;
       setResult(response);
       setResultLanguage(language);
       setResultSeed(query.trim());
-      if (resolutionId) setSelectedResolution(response.resolution_id ?? undefined);
+      if (resolutionId) {
+        setSelectedArtist(artist);
+        setSelectedStorefront(response.seed_storefront ?? storefront);
+        setSelectedResolution(response.resolution_id ?? undefined);
+      }
       setConfirmedModelArtist(response.seed_status === "matched" && artist &&
         (modelSuggested || (query.trim() === resultSeed && artist === confirmedModelArtist)) ? artist : null);
       setPreferencesChanged(false);
@@ -272,6 +323,8 @@ export default function ProductClient() {
                     <span aria-hidden="true">↗</span>
                   </button>
                 </div>
+                <ArtistPreferenceControl enabled={preferSeedArtist} ready={ready} language={language}
+                  onChange={switchArtistPreference} />
               </form>
             </section>
             <section
@@ -300,7 +353,7 @@ export default function ProductClient() {
                 {error ? (
                   <div role="alert" className="error-state">
                     <p>{resolutionError ? copy.resolutionExpired : copy.recommendationsError}</p>
-                    <button type="button" onClick={() => findMusic()}>
+                    <button type="button" onClick={retryDiscovery}>
                       {copy.tryAgain}
                     </button>
                   </div>
@@ -330,6 +383,7 @@ export default function ProductClient() {
               ) : null}
               {!loading && result && !error ? (
                 <div className="discovery-context">
+                  <ArtistPreferenceResult summary={result.artist_preference} language={language} />
                   {result.seed_track && !result.requires_confirmation ? (
                     <p className="seed-track"><span>{copy.basedOn}</span>
                       <strong>{result.seed_track.title} · {artistDisplayName(result.seed_track.artist)}</strong>

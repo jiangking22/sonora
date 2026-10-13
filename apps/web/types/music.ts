@@ -70,6 +70,15 @@ export type OriginalIdentificationResponse = {
   search_report?: SearchReport | null;
 };
 export type DiscoveryResponse = RecommendationResponse & {
+  artist_preference?: {
+    prefer_seed_artist: boolean;
+    applied: boolean;
+    target_same_artist: number;
+    same_artist_count: number;
+    other_artist_count: number;
+    shortfalls: ("same_artist" | "other_artists")[];
+    not_applied_reason: "theme" | "seed_unresolved" | "confirmation_required" | null;
+  } | null;
   requires_confirmation?: boolean;
   resolution_id?: string | null;
   search_report?: SearchReport | null;

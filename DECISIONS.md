@@ -2,7 +2,7 @@
 
 ## ADR-039: Explicit seed-artist allocation in homepage discovery
 
-**Status:** Accepted; backend implemented, homepage integration pending.
+**Status:** Accepted; backend and homepage implemented, integrated browser acceptance pending.
 **Date:** 2026-10-13
 
 Homepage discovery accepts optional strict `prefer_seed_artist`. Omitted/null preserves existing
@@ -13,6 +13,11 @@ Shortages use remaining eligible candidates from the other group and report actu
 shortfalls. Recall prioritizes artist/attributes according to the switch without increasing budgets.
 Themes, unresolved seeds and model suggestions awaiting confirmation report not-applied status.
 No model controls allocation, and no unrelated fixtures fill song-result shortages.
+
+The homepage defaults on, stores only this boolean locally and sends it explicitly. Confirmed
+recording identity is retained in request snapshots; switching cancels previous requests and
+ignores stale responses. Unsubmitted input edits wait for submission. Result summaries identify
+their own applied preference, so changing a draft cannot relabel a previous mix.
 
 首页显式偏好采用约七成／两成同歌手配额，候选不足允许另一组补足并如实显示。
 未传参数的旧客户端、助手和 MCP 保持原策略；不新增依赖或数据库迁移。

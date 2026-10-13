@@ -3,7 +3,7 @@
 ## Seed artist preference / 原唱偏好（approved 2026-10-13）
 
 - [x] 1. Backend contract and deterministic 70% / 20% selection.
-- [ ] 2. Homepage switch, browser persistence and cancellation-safe refresh.
+- [x] 2. Homepage switch, browser persistence and cancellation-safe refresh.
 - [ ] 3. Integrated browser acceptance and bilingual current-state documentation.
 
 Execute sequentially, failing regressions first, one focused commit per item. Scope: target
@@ -17,6 +17,12 @@ Item 1 acceptance: 24 new regressions failed before implementation; 57 focused d
 tests and 375 full API tests passed. Additional model-confirmation parameterization then passed
 all 64 identification tests (including both switch states). Ruff/compile and legacy help/HTTP
 smoke passed. Backend-only state at this checkpoint; no live homepage acceptance claimed.
+
+Item 2 acceptance: eight frontend regressions failed before implementation; 102 Web tests pass,
+including 11 preference UI scenarios. ESLint, TypeScript and production build passed. Defaults,
+local-storage failures, confirmation, dirty input, cancelled late replies and failed-switch retry
+are covered. Review reproduced and fixed missing artist alongside proof on repeat submission;
+expired proof is dropped on retry/switch. Browser acceptance is item 3.
 
 ## CI provider test isolation / CI 音乐来源测试环境隔离
 

@@ -6,8 +6,10 @@ Seed-artist allocation (ADR-039): the discovery API accepts optional strict `pre
 Explicit values prioritize recall and select a 70%/20% same-artist mix using canonical aliases,
 existing eligibility and within-group diverse ranking. Additive `artist_preference` reports
 actual counts, target and shortages; unresolved/theme/confirmation states do not apply a mix.
-Omitted/null values retain the previous policy. Homepage integration is pending.
-原唱偏好后端已实现；首页开关待接入。无需迁移或新增依赖，助手和旧版保持兼容。
+Omitted/null values retain the previous policy. The homepage sends an explicit boolean, defaults
+on and persists it in browser storage. Request snapshots preserve confirmed recording identity;
+switching cancels in-flight work and ignores stale replies. Dirty inputs wait for submission.
+原唱偏好已接入首页，显示每批结果的实际比例与候选不足；无需迁移或新增依赖，助手和旧版保持兼容。
 
 Progressive assistant discovery: task 1 implements match/mismatch/unknown listening constraints
 and bounded structured model assistance for catalog-confirmed recordings (ADR-038). Model
