@@ -1,5 +1,16 @@
 # TODO
 
+## Fill disabled-preference requests with other artists / 关闭偏好时继续补满
+
+- [x] Continue bounded metadata and related-artist recall until the requested count is met,
+  preserving the same-artist cap, eligibility and request budgets. Scope: discovery service,
+  focused tests, bilingual hints and documentation. Verify pytest/Ruff/compile, Web
+  tests/lint/types/build, local browser flow and legacy smoke.
+
+Acceptance: 397 API / 104 Web tests, all checks and legacy smoke pass. Local services
+updated and healthy; real Dreams switch still yields 7/3 on and 2/8 off. Controlled
+source-exhaustion responses verify desktop/mobile bilingual hints. QA account removed.
+
 ## Disabled preference shortage / 关闭偏好时禁止同歌手补位
 
 - [x] Cap same-artist selection at the original 20% requested-count quota when disabled;

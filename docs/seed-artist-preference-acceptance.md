@@ -6,6 +6,17 @@ This is local acceptance, not a remote deployment or a guarantee about future ca
 
 ## Automated verification / 自动验证
 
+ADR-041 follow-up: 397 API / 104 Web tests pass; Ruff/compile, ESLint/types/build and
+legacy smoke pass. Six backend regressions and two UI assertions failed before the change.
+Fixed catalogs prove continued search fills 3/5/10 after the initial supplementary query
+returns nothing, secondary metadata recall, eligible peer-artist expansion to ten other-artist
+tracks when own tracks are absent, stopping when full, and shared-budget exhaustion.
+The earlier ADR-040 partial-return behavior is superseded by continued recall until full
+or queries/sources/budgets are exhausted. No exact live-catalog availability guarantee is implied.
+Rebuilt local services are healthy. Real Edge Dreams switch again returned 7/3 on and 2/8 off;
+intercepted source-exhaustion responses verified updated desktop English/mobile Chinese hints.
+No page exceptions or mobile overflow. The disposable account was signed out and removed.
+
 ADR-040 follow-up (2026-10-13): 391 API / 104 Web tests pass, plus Ruff, compile,
 ESLint, types, production build and legacy smoke. Nine backend and two bilingual UI
 assertions failed before the fix. Fixed catalogs prove disabled 3/5/10 quotas remain

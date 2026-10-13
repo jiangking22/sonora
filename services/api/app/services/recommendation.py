@@ -22,6 +22,7 @@ from app.domain.music import (
     SearchResult,
     Track,
     canonical_key,
+    normalize_text,
 )
 from app.domain.pipeline import (
     Candidate,
@@ -173,6 +174,20 @@ def _recording_candidates(tracks: list[Track]) -> list[Candidate]:
     return list(merged.values())
 
 
+def _other_artist_queries(seed: Track, related_query: str, ranked: list[RankedTrack]) -> list[str]:
+    """Expand real seed metadata and eligible peer artists, never invented attributes."""
+    queries = [f"{related_query[:115]} hits"] if related_query else []
+    for feature in [*seed.genres[:4], *seed.tags[:4]]:
+        if feature.strip():
+            queries.extend(f"{feature.strip()[:114]} {suffix}" for suffix in ("hits", "songs"))
+    peers = {}
+    for item in ranked:
+        identity = artist_identity(item.track.artist.name)
+        if identity != artist_identity(seed.artist.name):
+            peers.setdefault(identity, item.track.artist.name)
+    return queries + list(peers.values())[:8]
+
+
 def finish_discovery(state: DiscoverySearch, resolution: SeedResolution | None = None,
                      *, allow_theme: bool = False, constraints: ListeningConstraints | None = None,
                      prefer_seed_artist: bool | None = None) -> DiscoveryResult:
@@ -204,11 +219,22 @@ def finish_discovery(state: DiscoverySearch, resolution: SeedResolution | None =
     summary = None
     if prefer_seed_artist is not None and resolution.track is not None:
         selected, summary = select_artist_mix(ranked, resolution.track, state.limit, prefer_seed_artist)
-        # Bare genre searches can favor songs with that word in their title. Try one
-        # metadata-derived alternative before backfilling, within the same provider budget.
-        if ("other_artists" in summary.shortfalls and related_query
-                and len(state.searches) < getattr(state.registry, "max_discovery_operations", MAX_DISCOVERY_OPERATIONS)):
-            state.query(f"{related_query[:115]} hits")
+        # Disabled preference keeps expanding other artists until full, including when
+        # they must fill a missing same-artist quota. All searches share the existing budget.
+        attempted = {normalize_text(value[:120]) for value in
+                     (state.seed, resolution.track.artist.name, related_query) if value}
+        while len(state.searches) < getattr(state.registry, "max_discovery_operations", MAX_DISCOVERY_OPERATIONS):
+            if getattr(state.registry, "end_reason", None) in {"deadline", "budget_exhausted"}:
+                break
+            if prefer_seed_artist:
+                queries = [f"{related_query[:115]} hits"] if related_query and "other_artists" in summary.shortfalls else []
+            else:
+                queries = _other_artist_queries(resolution.track, related_query, ranked) if len(selected) < state.limit else []
+            query = next((query for query in queries if normalize_text(query[:120]) not in attempted), None)
+            if query is None:
+                break
+            attempted.add(normalize_text(query[:120]))
+            state.query(query)
             search = state.search
             candidates = _recording_candidates(search.tracks)
             recalled = rank_related(candidates, resolution.track, state.profile)

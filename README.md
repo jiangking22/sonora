@@ -241,18 +241,22 @@ For 3/5/10 results the same-artist targets are 2/4/7 on and 1/1/2 off. Switching
 confirmed song immediately; an unsubmitted input edit waits for **Find music**. Each mix shows
 its own preference, actual counts and candidate shortages. When on, eligible tracks from the other
 group fill gaps. When off, same-artist tracks are capped at the original requested-count quota;
-other-artist shortages return fewer results without same-artist backfill. Mood/theme searches
+shortages trigger further metadata and related-artist searches to fill the requested count,
+without same-artist backfill. Exhausted sources or request budgets are shown as incomplete
+counts with a prompt to search again. Mood/theme searches
 and unresolved recordings do not apply the artist mix. This switch does not certify authorship.
 When other-artist candidates are short, one extra genre/tag-based query may use the remaining
-search budget before filling gaps; it keeps the same relevance filters and deadlines.
+search budget before filling gaps; when off, additional distinct metadata/peer-artist queries
+continue until full or exhausted. Relevance filters and deadlines remain in force.
 
 **原唱偏好**默认开启，并记住本浏览器选择。开启目标约七成同歌手，关闭约两成，优先探索其他歌手。
 推荐 3／5／10 首时，同歌手目标分别为开启 2／4／7 首、关闭 1／1／2 首。已确认歌曲切换后立即刷新；
 修改输入但尚未提交时只更新设置。每批结果展示生成时的偏好、实际数量及候选不足说明。开启时允许另一类相关歌曲
-补足；关闭时同歌手数量不超过原请求配额，其他歌手不足则少返回，禁止同歌手补位。
+补足；关闭时同歌手数量不超过原请求配额，不足则继续按曲风、标签及相关歌手扩展检索，
+用其他歌手作品补满，禁止同歌手补位。仅当来源、检索条件或请求预算耗尽仍未满时如实提示重试。
 主题查询、未识别或待确认的歌曲不应用比例。“原唱”以识别或确认的歌手为准，
 不额外证明创作或原唱身份。
-其他歌手候选不足时，会在原有预算内最多补查一次曲风／标签相关作品，再进行补足；不放宽相关性筛选。
+开启时其他歌手候选不足最多补查一次；关闭时在原有预算内持续扩展到数量满足或检索耗尽，不放宽相关性筛选。
 
 The additive request field `prefer_seed_artist` accepts only JSON booleans (or omitted/null
 for the previous policy). `artist_preference` reports `applied`, `prefer_seed_artist`,

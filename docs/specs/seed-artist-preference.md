@@ -17,7 +17,10 @@ MCP, authentication and database schema are unchanged. See ADR-039 and the three
   scores and diverse selection. The final diverse ordering cannot change group membership.
 - If other-artist candidates remain short and search budget remains, try one metadata-derived
   `<genre/tag> hits` query before backfilling. No such query runs for omitted preference, full
-  groups or missing metadata. Provider deadlines and operation/result caps remain authoritative.
+  groups or missing metadata. Disabled requests additionally try distinct hits/songs queries
+  from up to four genres/four tags and up to eight eligible peer artists, recomputing after each
+  query until the total is full. This also fills missing same-artist slots with other artists.
+  Provider deadlines and operation/result caps remain authoritative (ADR-041).
 - When enabled, fill a group's shortage with eligible tracks from the other group. When disabled,
   cap same-artist tracks at the rounded 20% requested-count quota; only other artists may fill
   remaining slots. Return fewer if unavailable. Never pad with unrelated tracks or fixtures.
@@ -28,7 +31,8 @@ MCP, authentication and database schema are unchanged. See ADR-039 and the three
   retaining the selected artist for fresh catalog validation. Loading and errors hide old results.
 
 默认开启并记住浏览器选择；开启约七成、关闭最多为请求数量的约两成同歌手。
-关闭时禁止同歌手补位，其他歌手不足则少返回（ADR-040）。开启时仍允许合格候选互补。
+关闭时禁止同歌手补位，继续按元数据及相关歌手检索补满（ADR-041）；
+只有检索条件、来源或预算耗尽才返回实际数量并提示重试。开启时仍允许合格候选互补。
 身份确认、来源证据、版本过滤、历史反馈评分和确定性排序均保留。
 
 ## Contract / 契约

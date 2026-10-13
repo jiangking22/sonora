@@ -111,13 +111,66 @@ def test_no_supplementary_query_when_groups_are_full_or_policy_is_omitted(enable
     assert len(registry.calls) == 3
 
 
-def test_supplementary_recall_is_at_most_once_even_when_no_more_matches_exist():
+def test_supplementary_recall_stops_after_distinct_metadata_queries_are_exhausted():
     registry = catalog(other=0)
     registry.max_discovery_operations = 24
     response = discover("Anchor", 10, registry, prefer_seed_artist=False)
-    assert len(registry.calls) == 4
+    assert len(registry.calls) == 5
+    assert registry.calls[-1][0] == "folk songs"
     assert response.artist_preference.shortfalls == ["other_artists"]
     assert response.artist_preference.same_artist_count == 2
+    assert len(response.items) == 2
+
+
+@pytest.mark.parametrize("limit,cap", [(3, 1), (5, 1), (10, 2)])
+def test_disabled_recall_continues_until_other_artists_fill_requested_count(limit, cap):
+    registry = catalog(other=0)
+    registry.max_discovery_operations = 24
+    registry.responses["folk songs"] = result([
+        song(f"Discovery {i}", f"New Artist {i}", genres=("folk",)) for i in range(10)
+    ])
+    response = discover("Anchor", limit, registry, prefer_seed_artist=False)
+    assert len(response.items) == limit
+    assert response.artist_preference.same_artist_count == cap
+    assert response.artist_preference.other_artist_count == limit - cap
+    assert response.artist_preference.shortfalls == []
+    assert len(registry.calls) == 5
+
+
+def test_disabled_recall_expands_verified_related_artists_to_fill_even_without_own_tracks():
+    registry = catalog(same=0, other=1)
+    registry.max_discovery_operations = 24
+    registry.responses["Singer 0"] = result([
+        song(f"Peer {i}", "Singer 0", genres=("folk",)) for i in range(10)
+    ] + [song("Anchor (Live)", "Singer 0", genres=("folk",))])
+    response = discover("Anchor", 10, registry, prefer_seed_artist=False)
+    assert len(response.items) == 10
+    assert response.artist_preference.same_artist_count == 0
+    assert response.artist_preference.other_artist_count == 10
+    assert all(item.track.title != "Anchor (Live)" for item in response.items)
+
+
+def test_disabled_expansion_uses_secondary_metadata_and_still_rejects_unrelated_tracks():
+    registry = catalog(other=0)
+    registry.max_discovery_operations = 24
+    registry.responses["Anchor"] = result([song("Anchor", "Faye Wong", genres=("folk", "acoustic"))])
+    registry.responses["acoustic hits"] = result([
+        song(f"Acoustic {i}", f"Peer {i}", genres=("acoustic",)) for i in range(8)
+    ] + [song("Unrelated", "Dance Artist", genres=("dance",))])
+    response = discover("Anchor", 10, registry, prefer_seed_artist=False)
+    assert len(response.items) == 10
+    assert response.artist_preference.same_artist_count == 2
+    assert all(item.track.title != "Unrelated" for item in response.items)
+
+
+def test_disabled_recall_respects_budget_when_later_queries_could_fill():
+    registry = catalog(other=0)
+    registry.max_discovery_operations = 4
+    registry.responses["folk songs"] = result([
+        song(f"Later {i}", f"Peer {i}", genres=("folk",)) for i in range(10)
+    ])
+    response = discover("Anchor", 10, registry, prefer_seed_artist=False)
+    assert len(registry.calls) == 4
     assert len(response.items) == 2
 
 

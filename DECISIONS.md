@@ -1,5 +1,25 @@
 # Architecture Decision Records / 架构决策记录
 
+## ADR-041: Continue other-artist recall to fill disabled-preference requests
+
+**Status:** Accepted and implemented; supersedes ADR-040's early shortage stopping behavior.
+**Date:** 2026-10-13
+
+User requires missing slots to be filled with other artists. After the existing metadata hits
+query, disabled discovery continues deterministic, distinct queries from up to four genres,
+four tags and eight eligible peer artists. Recompute eligibility and allocation after each query;
+stop as soon as the requested count is filled. Peer candidates can change as recall grows.
+Same-artist quota remains capped and other artists may also fill a missing same-artist quota.
+No invented metadata, unrelated fixtures, duplicate recordings or relaxed version filters.
+
+All calls retain the shared provider deadline and operation limits; unavailable catalogs cannot
+guarantee a full real-song result. Only exhausted queries/budgets/sources leave a partial result,
+with accurate counts and a prompt to search again. Enabled/omitted preference retains its prior
+one-query/no-query supplementary policy. No dependencies or schema changes.
+
+关闭后不足就继续查找其他歌手，凑满即停；不再把首次候选不足当作结束条件。
+真实来源耗尽或达到调用限制时如实提示，不能用同歌手或虚构歌曲冒充补满。
+
 ## ADR-040: No same-artist backfill when preference is disabled
 
 **Status:** Accepted and implemented, user refinement of ADR-039 shortage policy.

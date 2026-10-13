@@ -28,8 +28,8 @@ it.each(["en", "zh"] as const)("explains disabled shortages without promising sa
     prefer_seed_artist: false, same_artist_count: 1, other_artist_count: 0,
     shortfalls: ["other_artists"] }} />);
   expect(screen.getByText(language === "en"
-    ? "Not enough other-artist tracks. Showing fewer results without adding more tracks from the song artist."
-    : "其他歌手候选不足，已减少推荐数量，不使用同歌手作品补位。")).toBeInTheDocument();
+    ? "Could not fill this request with other artists from the available sources. Search again to retry; no extra seed-artist tracks were added."
+    : "当前来源未能凑满其他歌手作品，请再次发现音乐以重试；不使用同歌手作品补位。")).toBeInTheDocument();
 });
 
 async function start() {

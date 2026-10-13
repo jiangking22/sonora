@@ -9,7 +9,9 @@ actual counts, target and shortages; unresolved/theme/confirmation states do not
 When other-artist candidates are short, one metadata-derived `<genre/tag> hits` query may use
 remaining search budget before cross-group filling; eligibility and all deadline/call caps remain.
 When disabled, same-artist tracks are capped at the rounded 20% requested-count quota:
-other-artist shortages return fewer results and never cause same-artist backfill (ADR-040).
+shortages never cause same-artist backfill (ADR-040). Disabled requests continue distinct
+metadata queries and eligible peer-artist searches until full, or the available queries/shared
+deadline/budget are exhausted (ADR-041). Provider exhaustion is reported honestly with retry copy.
 Omitted/null values retain the previous policy. The homepage sends an explicit boolean, defaults
 on and persists it in browser storage. Request snapshots preserve confirmed recording identity;
 switching cancels in-flight work and ignores stale replies. Dirty inputs wait for submission.
