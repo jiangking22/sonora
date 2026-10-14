@@ -21,3 +21,14 @@ Item 1: 402 API tests, Ruff/compile and legacy smoke passed. Standard Docker bui
 Docker Hub authentication connectivity; updated application files using the existing local image
 and unchanged dependencies, then reverified both TLS endpoints and a real model answer.
 Use `python -m scripts.model_tls_probe` so source imports resolve from the container workdir.
+
+## Item 2: status, diagnostics and retry
+
+13 diagnostic regressions and two UI regressions failed before implementation. Final checks:
+423 API / 107 Web tests; Ruff/compile, ESLint/typecheck/production build, legacy smoke passed.
+Anonymous and CSRF rejection, Redis outage/rate limit, concurrent checks/timeouts, safe error
+categories and compatible JSON/SSE fallback are covered. Real Edge against updated containers
+passed authenticated model check and cloud chat. A browser-controlled TLS error displayed actionable
+help; exactly one user-clicked retry then returned a real model answer. Screenshots at 1440px and
+390px were inspected: no horizontal overflow or page exceptions. Mocked failure is not live TLS
+reproduction. Actual search remains unconfigured. Latest diagnostics are page-local, not persisted.

@@ -16,6 +16,7 @@ from app.services.recommendation import local_catalog
     ("GET", "/v1/providers/health", None), ("GET", "/v1/tracks/search?q=jazz", None),
     ("GET", "/v1/device", None), ("GET", "/v1/mcp/tools", None),
     ("GET", "/v1/agent/capabilities", None),
+    ("POST", "/v1/agent/diagnostics", {"service": "model"}),
     ("POST", "/v1/recommendations", {"seed": "jazz"}),
     ("POST", "/v1/feedback", {}), ("POST", "/v1/recordings/resolve", {"seed": "jazz"}),
     ("POST", "/v1/recommendations/discover", {"seed": "jazz"}),
@@ -136,3 +137,9 @@ def test_auth_and_business_logs_never_include_credentials(auth_env, caplog):
     assert "PrivateUsername" not in caplog.text
     assert token not in caplog.text
     assert headers["X-CSRF-Token"] not in caplog.text
+
+
+def test_diagnostics_require_csrf_after_login(auth_env):
+    client, _, _ = auth_env
+    register(client)
+    assert client.post('/v1/agent/diagnostics', json={'service': 'model'}).status_code == 403

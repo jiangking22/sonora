@@ -291,6 +291,8 @@ def model_capabilities(provider: LLMProvider, registry=None) -> ModelCapabilitie
     reason = ("local_mode" if provider.name == "local" else "unsupported"
               if isinstance(provider, OpenAICompatibleProvider) and provider.supports_deep_thinking else "unverified")
     return ModelCapabilities(provider=provider.name,
+                             model_configuration='configured' if provider.name != 'local' else
+                             'local_mode' if get_settings().llm_provider == 'local' else 'not_configured',
                              supports_deep_thinking=getattr(provider, "supports_deep_thinking", False),
                              native_search=NativeSearchState(reason=reason),
                              music_catalog_search='available' if registry and (

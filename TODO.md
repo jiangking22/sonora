@@ -5,7 +5,7 @@
 - [x] 1. Repair cloud TLS connection — verified current connectivity; historical root cause unresolved. Reproduce inside the actual API
   container, inspect chain/trust/network, add failing regressions, repair verified TLS configuration
   and optional deployment-mounted CA. Preserve credentials/model/ranking; verify and commit alone.
-- [ ] 2. Add safe configuration status, authenticated bounded diagnostics, actionable errors,
+- [x] 2. Add safe configuration status, authenticated bounded diagnostics, actionable errors,
   settings panel and explicit manual retry. Preserve JSON/SSE fallback compatibility.
 - [ ] 3. Extend existing Brave search configuration guidance and independent detection;
   distinguish model health from search health and retain catalog verification/citations/budgets.
@@ -20,6 +20,11 @@ verified both DNS certificate chains and a real DeepSeek answer before/after the
 Custom-CA regressions failed first. Standard image build hit Docker Hub network timeout;
 updated from the cached existing image (unchanged dependencies). No custom CA was needed.
 See docs/cloud-assistant-acceptance.md; no claim that the historical intermittent cause is fixed.
+
+Item 2 acceptance: 423 API / 107 Web tests; Ruff/compile, ESLint/types/build and legacy smoke pass.
+Real authenticated model diagnostic and cloud conversation pass. Controlled TLS error and explicit
+retry tested in Edge; 1440px/390px screenshots inspected, no overflow or page exceptions.
+No automatic paid probes or chat retries; model success never claims web search success.
 
 ## Sparse metadata exploration / 稀疏元数据补满
 

@@ -76,6 +76,24 @@ class ModelCapabilities(StrictModel):
     native_search: NativeSearchState
     music_catalog_search: Literal['available', 'unavailable'] = 'unavailable'
     web_search: Literal['available', 'not_configured'] = 'not_configured'
+    model_configuration: Literal['configured', 'not_configured', 'local_mode'] = 'not_configured'
+
+
+DiagnosticCode = Literal['ok', 'not_configured', 'tls_verification_failed', 'tls_configuration_error',
+                         'connection_timeout', 'connection_failed', 'authentication_failed',
+                         'rate_limited', 'upstream_error', 'model_output_incompatible', 'diagnostics_busy']
+
+
+class DiagnosticRequest(StrictModel):
+    service: Literal['model']
+
+
+class DiagnosticResult(StrictModel):
+    service: Literal['model'] = 'model'
+    code: DiagnosticCode
+    checked_at: str
+    latency_ms: float = Field(ge=0)
+    request_id: str
 
 
 class AgentSearchReport(StrictModel):
@@ -106,6 +124,7 @@ class ChatResponse(BaseModel):
     sources: dict[str, ProviderResult] = Field(default_factory=dict)
     provider: str
     fallback_reason: Literal["llm_unavailable"] | None = None
+    diagnostic_code: DiagnosticCode | None = None
     thinking_mode: Literal["basic", "standard", "deep"] = "standard"
     thinking_unavailable_reason: Literal["unsupported", "llm_unavailable"] | None = None
     native_search: NativeSearchState = Field(default_factory=lambda: NativeSearchState(reason="unverified"))

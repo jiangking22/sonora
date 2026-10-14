@@ -1,5 +1,14 @@
 # Architecture / 架构
 
+## Assistant diagnostics / 助手诊断
+
+Capabilities add non-secret model configuration status. Authenticated, CSRF-protected
+`POST /v1/agent/diagnostics` checks only the configured model using a fixed JSON request.
+Redis limits 3/account/minute and 20/global/minute; two process-wide slots, 12-second probe timeout,
+no retries. Additive `diagnostic_code` on chat responses/errors preserves JSON/SSE fallback fields.
+Settings show configuration, timestamped last result and separate search status. Retry is explicit
+and retains the original question/thinking snapshot; no browser key storage or ranking changes.
+
 ## Cloud connection / 云端连接
 
 Model transport uses system trust plus an optional reviewed `LLM_CA_BUNDLE`, mounted read-only

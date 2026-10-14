@@ -3,8 +3,8 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import AgentClient from "../components/AgentClient";
 import { ApiError } from "../lib/api";
 
-const api = vi.hoisted(() => ({ stream: vi.fn(), capabilities: vi.fn() }));
-vi.mock("../lib/agent", () => ({ streamAgentChat: api.stream, getAgentCapabilities: api.capabilities }));
+const api = vi.hoisted(() => ({ stream: vi.fn(), capabilities: vi.fn(), diagnostics: vi.fn() }));
+vi.mock("../lib/agent", () => ({ streamAgentChat: api.stream, getAgentCapabilities: api.capabilities, diagnoseAgentService: api.diagnostics }));
 const result = { conversation_id: "one", answer: "为你找到学习音乐。", recommended_tracks: [],
   used_tools: [{ name: "recommend_tracks", status: "ok" }], explanation: "", citations: [],
   sources: {}, provider: "local" };
@@ -221,4 +221,35 @@ it("bounds the panel when the mobile keyboard shrinks the visual viewport and re
     else Reflect.deleteProperty(window, "visualViewport");
     if (originalWidth) Object.defineProperty(window, "innerWidth", originalWidth);
   }
+});
+
+
+it("opens settings without probing and keeps model health separate from web search", async () => {
+  api.capabilities.mockResolvedValue({ provider: "openai_compatible", supports_deep_thinking: true,
+    native_search: { status: "unavailable", reason: "unsupported" }, model_configuration: "configured", web_search: "not_configured" });
+  api.diagnostics.mockResolvedValue({ service: "model", code: "ok", checked_at: "2026-10-14T12:00:00Z", latency_ms: 25, request_id: "probe-1" });
+  render(<AgentClient />);
+  fireEvent.click(screen.getByText("智能服务设置"));
+  expect(await screen.findByText("模型配置：已配置（尚不代表连接成功）")).toBeInTheDocument();
+  expect(api.diagnostics).not.toHaveBeenCalled();
+  expect(screen.getByText(/最近模型检测：尚未检测/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "检测模型连接" }));
+  expect(await screen.findByText(/模型连接可用/)).toBeInTheDocument();
+  expect(api.diagnostics).toHaveBeenCalledTimes(1);
+  expect(api.stream).not.toHaveBeenCalled();
+  expect(screen.queryByRole("textbox", { name: /key|密钥/i })).not.toBeInTheDocument();
+});
+
+it("offers explicit retry of the failed original message without automatic resubmission", async () => {
+  api.stream.mockRejectedValueOnce(new ApiError("llm_unavailable", "Unavailable", 503));
+  render(<AgentClient />);
+  fireEvent.change(screen.getByLabelText("想听什么？"), { target: { value: "原始问题" } });
+  fireEvent.click(screen.getByRole("button", { name: "发送" }));
+  await screen.findByRole("alert");
+  fireEvent.change(screen.getByLabelText("想听什么？"), { target: { value: "尚未发送的草稿" } });
+  expect(api.stream).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole("button", { name: "重试上次消息" }));
+  await screen.findByText(result.answer);
+  expect(api.stream.mock.calls[1][1]).toBe("原始问题");
+  expect(screen.getAllByText("原始问题")).toHaveLength(1);
 });

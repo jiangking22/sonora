@@ -44,6 +44,27 @@ def client(tmp_path: Path):
 BODY = {"message": "推荐适合学习的歌"}
 
 
+@pytest.mark.parametrize('stream', [False, True])
+@pytest.mark.parametrize('status,code', [(401, 'authentication_failed'), (429, 'rate_limited'),
+                                        (503, 'upstream_error')])
+def test_chat_preserves_fallback_and_adds_safe_diagnostic(client, stream, status, code):
+    import httpx
+
+    from app.agent.providers import OpenAICompatibleProvider
+    provider = OpenAICompatibleProvider('https://model.example', 'private-key-marker', 'test',
+        httpx.MockTransport(lambda _: httpx.Response(status, text='private-error-marker')))
+    app.dependency_overrides[get_llm_provider] = lambda: provider
+    response = client.post('/v1/agent/chat' + ('/stream' if stream else ''), json={'message': '聊聊爵士'})
+    assert response.status_code == 200
+    if stream:
+        assert '"fallback_reason": "llm_unavailable"' in response.text
+        assert f'"diagnostic_code": "{code}"' in response.text
+    else:
+        assert response.json()['fallback_reason'] == 'llm_unavailable'
+        assert response.json()['diagnostic_code'] == code
+    assert 'marker' not in response.text
+
+
 def test_legacy_timeout_setting_still_allows_the_full_progressive_chat_budget(monkeypatch):
     from types import SimpleNamespace
 
@@ -160,7 +181,8 @@ def test_capabilities_and_chat_do_not_claim_native_search(client):
     assert capability.status_code == 200
     assert capability.json() == {"provider": "local", "supports_deep_thinking": False,
                                   "native_search": {"status": "unavailable", "reason": "local_mode"},
-                                  "music_catalog_search": "unavailable", "web_search": "not_configured"}
+                                  "music_catalog_search": "unavailable", "web_search": "not_configured",
+                                  "model_configuration": "local_mode"}
     response = client.post("/v1/agent/chat", json={"message": "请联网查询最新音乐动态"})
     assert response.status_code == 200
     assert response.json()["native_search"]["status"] == "unavailable"

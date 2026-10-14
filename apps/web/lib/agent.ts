@@ -1,6 +1,8 @@
 import { ApiError } from "./errors";
 import { authFetch, sessionSignal } from "./auth";
 import { safeExternalUrl } from "./url";
+import { isDiagnosticCode } from "./diagnostics";
+import type { DiagnosticResult } from "../types/agent";
 import type { AgentResponse, AgentStatus, ModelCapabilities, NativeSearchState } from "../types/agent";
 
 function validSearch(value: NativeSearchState | undefined): boolean {
@@ -13,10 +15,28 @@ export async function getAgentCapabilities(baseUrl: string, signal?: AbortSignal
   const result = await response.json() as ModelCapabilities;
   if (!result || typeof result.provider !== "string" || typeof result.supports_deep_thinking !== "boolean"
     || !validSearch(result.native_search)
+    || (result.model_configuration != null && !["configured", "not_configured", "local_mode"].includes(result.model_configuration))
     || (result.music_catalog_search != null && !["available", "unavailable"].includes(result.music_catalog_search))
     || (result.web_search != null && !["available", "not_configured"].includes(result.web_search)))
     throw new ApiError("invalid_response", "Invalid model capabilities.", 502);
   return result;
+}
+
+export async function diagnoseAgentService(baseUrl: string, service: "model", signal?: AbortSignal): Promise<DiagnosticResult> {
+  const response = await authFetch(`${baseUrl.replace(/\/$/, "")}/v1/agent/diagnostics`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ service }),
+    signal, cache: "no-store",
+  }, fetch, 20000);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new ApiError(body.error?.code ?? "diagnostics_unavailable", "Connection check unavailable.", response.status);
+  }
+  const value = await response.json() as DiagnosticResult;
+  if (!value || value.service !== service || !isDiagnosticCode(value.code) || typeof value.checked_at !== "string"
+    || !Number.isFinite(Date.parse(value.checked_at)) || typeof value.request_id !== "string"
+    || !Number.isFinite(value.latency_ms) || value.latency_ms < 0)
+    throw new ApiError("invalid_response", "Invalid connection check.", 502);
+  return value;
 }
 
 function validateResult(value: unknown): AgentResponse {
@@ -27,6 +47,7 @@ function validateResult(value: unknown): AgentResponse {
     || !Array.isArray(result.recommended_tracks) || !Array.isArray(result.used_tools)
     || !Array.isArray(result.citations) || !result.sources
     || (result.fallback_reason != null && result.fallback_reason !== "llm_unavailable")
+    || (result.diagnostic_code != null && !isDiagnosticCode(result.diagnostic_code))
     || (result.thinking_mode != null && !["basic", "standard", "deep"].includes(result.thinking_mode))
     || (result.thinking_unavailable_reason != null && !["unsupported", "llm_unavailable"].includes(result.thinking_unavailable_reason))
     || (result.native_search != null && !validSearch(result.native_search))
@@ -71,7 +92,8 @@ export async function streamAgentChat(
   }, fetcher, deepThinking ? 130000 : 100000);
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new ApiError(body.error?.code ?? "http_error", body.error?.message ?? "Music assistant unavailable.", response.status);
+    throw new ApiError(body.error?.code ?? "http_error", body.error?.message ?? "Music assistant unavailable.", response.status,
+      isDiagnosticCode(body.error?.diagnostic_code) ? body.error.diagnostic_code : undefined);
   }
   if (!response.body || !response.headers.get("Content-Type")?.startsWith("text/event-stream"))
     throw new ApiError("invalid_response", "Music assistant did not return a stream.", 502);
@@ -105,7 +127,8 @@ export async function streamAgentChat(
         let data;
         try { data = JSON.parse(json); }
         catch { throw new ApiError("invalid_response", "Music assistant returned invalid data.", 502); }
-        if (event === "error") throw new ApiError(data.error?.code ?? "agent_error", data.error?.message ?? "Music assistant unavailable.", 502);
+        if (event === "error") throw new ApiError(data.error?.code ?? "agent_error", data.error?.message ?? "Music assistant unavailable.", 502,
+          isDiagnosticCode(data.error?.diagnostic_code) ? data.error.diagnostic_code : undefined);
         if (event === "status" && typeof data.label === "string") onStatus(data);
         if (event === "done") return validateResult(data);
       }

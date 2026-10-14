@@ -1,5 +1,24 @@
 # Architecture Decision Records / 架构决策记录
 
+## ADR-044: Authenticated explicit diagnostics and manual assistant retry
+
+**Status:** Implemented (2026-10-14).
+
+Add `model_configuration` to capabilities without exposing key, URL or custom CA paths.
+`POST /v1/agent/diagnostics` accepts only a strict fixed service enum (model at this checkpoint).
+Existing login and CSRF apply. Redis limits checks to 3/account/minute and 20/global/minute;
+Redis outage fails closed. Two process-wide slots and a 12-second model deadline bound probes.
+The fixed JSON request validates the canonical Answer; it never reads chat, invokes tools,
+changes rank or automatically retries. It may incur one model request charge.
+
+Preserve `fallback_reason=llm_unavailable` and existing HTTP/SSE error codes; optionally add a
+safe `diagnostic_code`. TLS, authentication, timeout, rate limit, connection, upstream and invalid
+output categories never expose upstream error bodies. Latest check stays in page memory and is
+explicitly timestamped. Configuration is server-only, not a key-entry browser form.
+Manual retry uses the original question/thinking snapshot and preserves an edited draft. Existing
+completed fallback turns remain visible; no claim of server-side exactly-once execution after a
+lost response. 设置、诊断及重试均由用户主动操作；模型成功不代表已经联网检索。
+
 ## ADR-043: Verified model TLS and optional operator-mounted CA
 
 **Status:** Implemented (2026-10-14); historical intermittent TLS root cause unresolved.

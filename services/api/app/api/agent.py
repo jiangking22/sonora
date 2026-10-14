@@ -4,14 +4,25 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
+from redis import Redis
 from sqlalchemy.orm import Session
 
 from app.agent.core import Agent, AgentError
+from app.agent.diagnostics import limit_diagnostics, probe_model
 from app.agent.providers import LLMProvider, get_llm_provider, model_capabilities
-from app.agent.schemas import AgentRequest, ChatRequest, ChatResponse, ModelCapabilities
+from app.agent.schemas import (
+    AgentRequest,
+    ChatRequest,
+    ChatResponse,
+    DiagnosticRequest,
+    DiagnosticResult,
+    ModelCapabilities,
+)
 from app.auth.dependencies import CurrentIdentity
+from app.infrastructure.cache import get_redis
 from app.infrastructure.config import get_settings
 from app.infrastructure.database import get_session
+from app.infrastructure.workers import run_blocking
 from app.observability.events import emit
 from app.providers.registry import ProviderRegistry, get_provider_registry
 
@@ -22,6 +33,14 @@ router = APIRouter(prefix="/v1/agent", tags=["agent"])
 def capabilities(provider: Annotated[LLMProvider, Depends(get_llm_provider)],
                  registry: Annotated[ProviderRegistry, Depends(get_provider_registry)]):
     return model_capabilities(provider, registry)
+
+
+@router.post('/diagnostics', response_model=DiagnosticResult)
+async def diagnostics(request: DiagnosticRequest, identity: CurrentIdentity,
+                      cache: Annotated[Redis, Depends(get_redis)],
+                      provider: Annotated[LLMProvider, Depends(get_llm_provider)]):
+    await run_blocking(lambda: limit_diagnostics(cache, identity.user_id))
+    return await probe_model(provider)
 
 
 def get_agent(session: Annotated[Session, Depends(get_session)],
@@ -41,7 +60,8 @@ def error_envelope(error: AgentError) -> dict:
                 "database_unavailable": "Database unavailable.",
                 "invalid_model_output": "Music assistant returned invalid output."}
     messages["model_output_truncated"] = "Model answer exceeded its output budget. Please narrow the question."
-    return {"error": {"code": error.code, "message": messages.get(error.code, "Music assistant unavailable.")}}
+    return {"error": {"code": error.code, "message": messages.get(error.code, "Music assistant unavailable."),
+                      **({'diagnostic_code': error.diagnostic_code} if error.diagnostic_code else {})}}
 
 
 @router.post("/chat", response_model=ChatResponse)

@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from sqlalchemy import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.agent.failures import diagnostic_code
 from app.agent.memory import Memory, MemoryError
 from app.agent.providers import (
     LLMProvider,
@@ -30,9 +31,11 @@ DEEP_TIMEOUT_SECONDS = 120
 
 
 class AgentError(Exception):
-    def __init__(self, code: str, status: int = 502) -> None:
+    def __init__(self, code: str, status: int = 502, diagnostic: str | None = None) -> None:
         super().__init__(code)
         self.code, self.status = code, status
+        self.diagnostic_code = diagnostic or ({"invalid_model_output": "model_output_incompatible",
+            "model_output_truncated": "model_output_incompatible", "agent_timeout": "connection_timeout"}.get(code))
 
 
 class Agent:
@@ -63,10 +66,12 @@ class Agent:
                     yield {"event": "status", "data": {"stage": "thinking", "label": "深入理解上下文"}}
                 provider = self.provider
                 fallback_reason = None
+                failure_code = None
                 started = perf_counter()
                 try:
                     plan_data = await provider.plan(context, tool_schemas())
-                except httpx.HTTPError:
+                except (httpx.HTTPError, OSError) as exc:
+                    failure_code = diagnostic_code(exc)
                     provider, fallback_reason = LocalLLMProvider(), "llm_unavailable"
                     emit("agent_fallback", operation="plan", code=fallback_reason, level=logging.WARNING)
                     yield {"event": "status", "data": {"stage": "fallback", "label": "已切换基础模式"}}
@@ -115,7 +120,8 @@ class Agent:
                 yield {"event": "status", "data": {"stage": "composing", "label": "整理回答"}}
                 try:
                     answer_data = await provider.answer(context, results)
-                except httpx.HTTPError:
+                except (httpx.HTTPError, OSError) as exc:
+                    failure_code = diagnostic_code(exc)
                     provider, fallback_reason = LocalLLMProvider(), "llm_unavailable"
                     emit("agent_fallback", operation="answer", code=fallback_reason, level=logging.WARNING)
                     yield {"event": "status", "data": {"stage": "fallback", "label": "已切换基础模式"}}
@@ -128,7 +134,7 @@ class Agent:
                                         recommended_tracks=tools.items, used_tools=traces,
                                         explanation=tools.explanation, citations=tools.citations,
                                         sources=tools.sources, provider=provider.name,
-                                        fallback_reason=fallback_reason,
+                                        fallback_reason=fallback_reason, diagnostic_code=failure_code,
                                         thinking_mode="basic" if provider.name == "local" else "deep" if deep else "standard",
                                         thinking_unavailable_reason=(fallback_reason or "unsupported")
                                         if request.deep_thinking and (provider.name == "local" or not deep) else None,
@@ -146,7 +152,7 @@ class Agent:
         except (ValidationError, ValueError, KeyError, TypeError) as exc:
             raise AgentError("invalid_model_output") from exc
         except httpx.HTTPError as exc:
-            raise AgentError("llm_unavailable", 503) from exc
+            raise AgentError("llm_unavailable", 503, diagnostic_code(exc)) from exc
         except SQLAlchemyError as exc:
             raise AgentError("database_unavailable", 503) from exc
         except AgentError:

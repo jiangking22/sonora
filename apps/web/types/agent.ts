@@ -4,6 +4,7 @@ export type ToolName = "get_user_profile" | "recommend_tracks" | "search_music_k
 export type AgentStatus = { stage: string; label: string; tool?: ToolName; status?: string };
 export type NativeSearchState = { status: "unavailable"; reason: "unsupported" | "unverified" | "local_mode" };
 export type ModelCapabilities = { provider: string; supports_deep_thinking: boolean; native_search: NativeSearchState;
+  model_configuration?: "configured" | "not_configured" | "local_mode";
   music_catalog_search?: "available" | "unavailable"; web_search?: "available" | "not_configured" };
 export type AgentSearchReport = {
   requested: number; returned: number; reused: boolean; expanded: boolean; external_requests: number;
@@ -21,9 +22,16 @@ export type AgentResponse = {
   sources: Record<string, ProviderResult>;
   provider: string;
   fallback_reason?: "llm_unavailable" | null;
+  diagnostic_code?: DiagnosticCode | null;
   thinking_mode?: "basic" | "standard" | "deep";
   thinking_unavailable_reason?: "unsupported" | "llm_unavailable" | null;
   native_search?: NativeSearchState;
   search_report?: AgentSearchReport | null;
   web_references?: { title: string; url: string; track_ids: string[] }[];
 };
+
+export type DiagnosticCode = "ok" | "not_configured" | "tls_verification_failed" | "tls_configuration_error"
+  | "connection_timeout" | "connection_failed" | "authentication_failed" | "rate_limited"
+  | "upstream_error" | "model_output_incompatible" | "diagnostics_busy";
+export type DiagnosticResult = { service: "model"; code: DiagnosticCode; checked_at: string;
+  latency_ms: number; request_id: string };

@@ -1,5 +1,11 @@
 # Sonora · Explainable Music Recommendation / 可解释音乐推荐
 
+Assistant **智能服务设置** shows model configuration, the latest explicit connection check and
+separate web-search status. **检测模型连接** makes one small potentially billable request; **重试上次消息**
+resends only when clicked. Set `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` on the server,
+then recreate the API container (or restart the standalone API) and refresh the page. No keys enter
+the browser. 登录后可查看状态和检测连接；证书、超时、鉴权、限流及模型格式问题都有处理步骤。
+
 Cloud connection: keep HTTPS verification enabled. Optional reviewed custom CA deployment and
 container troubleshooting are in [deployment](docs/DEPLOYMENT.md#model-tls--模型证书配置).
 云端连接保留证书校验；当前真实调用已通过，历史间歇证书错误尚未复现，详见

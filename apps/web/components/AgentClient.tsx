@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { getAgentCapabilities, streamAgentChat } from "../lib/agent";
 import { ApiError } from "../lib/api";
+import AgentSettings from "./AgentSettings";
+import { DIAGNOSTIC_HELP, isDiagnosticCode } from "../lib/diagnostics";
 import { AccountMenu } from "./AuthGate";
 import { artistDisplayName } from "../lib/i18n";
 import { safeExternalUrl } from "../lib/url";
@@ -51,6 +53,7 @@ export default function AgentClient() {
   const scrollArea = useRef<HTMLDivElement>(null);
   const followLatest = useRef(true);
   const inFlight = useRef(false);
+  const lastAttempt = useRef<{ text: string; deep: boolean } | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
   useEffect(() => {
     const check = new AbortController();
@@ -101,12 +104,14 @@ export default function AgentClient() {
     setShowLatest(!nearBottom);
   }
 
-  async function send(event: React.FormEvent) {
-    event.preventDefault();
-    const text = message.trim();
+  async function send(event?: React.FormEvent, retry = false) {
+    event?.preventDefault();
+    const text = retry ? lastAttempt.current?.text ?? "" : message.trim();
+    const selectedDeep = retry ? lastAttempt.current?.deep ?? false : deepThinking;
     if (!text || inFlight.current) return;
     returnToLatest();
     inFlight.current = true;
+    lastAttempt.current = { text, deep: selectedDeep };
     controller.current = new AbortController();
     const signal = controller.current.signal;
     setLoading(true); setError(null); setStatuses([]); setResult(null);
@@ -114,16 +119,16 @@ export default function AgentClient() {
     setPending(text);
     try {
       const next = await streamAgentChat(API_BASE, text, conversation.current,
-        (status) => { if (!signal.aborted) setStatuses((items) => [...items, status].slice(-8)); }, signal, undefined, deepThinking);
+        (status) => { if (!signal.aborted) setStatuses((items) => [...items, status].slice(-8)); }, signal, undefined, selectedDeep);
       if (signal.aborted) return;
       conversation.current = next.conversation_id;
-      setResult(next); setMessage("");
+      setResult(next); setMessage((draft) => !retry || draft.trim() === text ? "" : draft);
       setPending(null);
       setHistory((items) => [...items, { role: "你", text }, { role: "Sonora", text: next.answer }]);
       if (followLatest.current) input.current?.focus({ preventScroll: true });
     } catch (failure) {
       if (!signal.aborted) setError(failure instanceof ApiError
-        ? ERRORS[failure.code] ?? "暂时无法回答，请重试。" : "连接中断，请检查网络后重试。");
+        ? isDiagnosticCode(failure.diagnosticCode) ? DIAGNOSTIC_HELP[failure.diagnosticCode] : ERRORS[failure.code] ?? "暂时无法回答，请重试。" : "连接中断，请检查网络后重试。");
     } finally {
       if (controller.current?.signal === signal) {
         inFlight.current = false;
@@ -168,7 +173,12 @@ export default function AgentClient() {
           {error ? <p role="alert" className="error-state">{error}</p> : null}
           {result?.fallback_reason ? <p role="status" className="notice">
             智能服务暂不可用，已使用基础模式。推荐仍按音乐匹配与已有偏好排序。
+            {result.diagnostic_code ? ` ${DIAGNOSTIC_HELP[result.diagnostic_code]}` : ""}
           </p> : null}
+          {(error || result?.fallback_reason) ? <div className="agent-retry">
+            <button type="button" disabled={loading} onClick={() => void send(undefined, true)}>重试上次消息</button>
+            <small>仅点击后重新请求，可能再次计费。已返回的基础回答会保留；回复中断时，服务器可能已保存上次消息。</small>
+          </div> : null}
           {result?.thinking_unavailable_reason === "unsupported" ? <p className="notice">
             当前模型接口暂不支持深度思考，已使用{result.provider === "local" ? "基础" : "普通"}模式。
           </p> : null}
@@ -185,7 +195,7 @@ export default function AgentClient() {
               {loading ? <button type="button" className="agent-stop" onClick={stop}>停止</button> : null}
               {deepThinking ? <small>深入理解与分析，最多等待约两分钟。</small> : null}</div></form>
         </section>
-        <aside className="agent-progress" aria-labelledby="progress-title"><h2 id="progress-title">这次聆听</h2>
+        <aside className="agent-progress" aria-labelledby="progress-title"><AgentSettings capabilities={capabilities} /><h2 id="progress-title">这次聆听</h2>
           <div aria-live="polite" aria-busy={loading}>
             {!statuses.length ? <p>等待你的第一句话。</p> : <ol>{statuses.map((status, i) => <li key={i}>
               {status.label}{status.tool ? ` · ${LABELS[status.tool] ?? status.tool}` : ""}</li>)}</ol>}

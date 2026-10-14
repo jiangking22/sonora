@@ -80,3 +80,15 @@
 }
 .agent-search-report { margin-top: 18px; font-size: 13px; line-height: 1.6; color: var(--ink); }
 .agent-inference { font-size: 11px; color: var(--muted); margin: 3px 0; }
+
+.agent-settings { border-bottom: 1px solid var(--line, #ddd); padding-bottom: 20px; margin-bottom: 24px; }
+.agent-settings summary { cursor: pointer; font-weight: 600; padding: 10px 0; }
+.agent-settings-body { font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
+.agent-settings-body p { margin: 12px 0; }
+.agent-settings-body code { font-size: 12px; white-space: normal; }
+.agent-settings-body button, .agent-retry button { min-height: 44px; padding: 8px 14px; border: 1px solid currentColor; border-radius: 8px; background: transparent; cursor: pointer; }
+.agent-settings-body button:disabled, .agent-retry button:disabled { opacity: .5; cursor: wait; }
+.agent-retry { display: grid; gap: 8px; margin: 12px 0; }
+.agent-retry button { justify-self: start; }
+.agent-retry small { color: #666; line-height: 1.5; }
+.agent-settings summary:focus-visible, .agent-settings button:focus-visible, .agent-retry button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
