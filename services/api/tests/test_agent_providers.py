@@ -200,3 +200,31 @@ def test_tls_failure_logs_category_without_private_exception_text(caplog):
     assert events[-1]["code"] == "tls_verification_failed"
     assert events[-1]["error_type"] == "ConnectError"
     assert "marker" not in caplog.text
+
+
+def test_custom_ca_is_added_to_system_trust_and_verification_stays_enabled(monkeypatch):
+    from app.infrastructure.tls import model_ssl_context
+
+    class Context:
+        verify_mode = ssl.CERT_REQUIRED
+        check_hostname = True
+
+        def load_verify_locations(self, *, cafile):
+            self.loaded = cafile
+
+    context = Context()
+    monkeypatch.setattr(ssl, "create_default_context", lambda: context)
+    assert model_ssl_context("/mounted/reviewed-ca.pem") is context
+    assert context.loaded == "/mounted/reviewed-ca.pem"
+    assert context.verify_mode == ssl.CERT_REQUIRED and context.check_hostname
+
+
+def test_invalid_custom_ca_fails_closed(tmp_path):
+    from app.infrastructure.tls import model_ssl_context
+
+    invalid = tmp_path / "invalid.pem"
+    invalid.write_text("not a CA")
+    with pytest.raises(ssl.SSLError):
+        model_ssl_context(str(invalid))
+    with pytest.raises(OSError):
+        model_ssl_context(str(tmp_path / "missing.pem"))

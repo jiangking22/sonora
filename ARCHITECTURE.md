@@ -1,5 +1,12 @@
 # Architecture / 架构
 
+## Cloud connection / 云端连接
+
+Model transport uses system trust plus an optional reviewed `LLM_CA_BUNDLE`, mounted read-only
+through `infra/compose.model-ca.yml`. Hostname/TLS verification stays mandatory; invalid trust
+configuration fails closed. Current container connection succeeds; historical intermittent TLS
+failure remains unreproduced (ADR-043). Existing model, credentials and ranking are unchanged.
+
 ## Purpose / 目标
 
 Seed-artist allocation (ADR-039): the discovery API accepts optional strict `prefer_seed_artist`.

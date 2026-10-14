@@ -158,3 +158,25 @@ has no findings. The full audit still reports the development ESLint glob chain'
 [braces advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm); `npm run audit` allows only
 that exact development-only chain and blocks every other high/critical finding (ADR-030).
 完整审计仍有已记录的开发工具告警，不宣称零告警；不影响生产依赖审计，等待上游补丁后移除此例外。
+
+## Model TLS / 模型证书配置
+
+Run `docker compose exec -T api python -m scripts.model_tls_probe` in the affected network.
+It checks only the server-configured model host with verified TLS, without credentials/model calls.
+Inspect the actual container trust store and chain before choosing a fix. Never use `verify=False`.
+If the network requires a private CA, obtain and verify its PEM through the network administrator;
+set `MODEL_CA_HOST_PATH` to its absolute host path, then run:
+
+```sh
+docker compose -f docker-compose.yml -f infra/compose.model-ca.yml up -d --build api
+```
+
+The override mounts the PEM read-only at `/run/certs/model-ca.pem`, sets `LLM_CA_BUNDLE`, and
+adds its roots to system trust. Missing/invalid files fail closed. For manual execution set
+`LLM_CA_BUNDLE` to the reviewed PEM and restart the API process. Keep `.env`, PEM and private
+keys outside Git; never paste keys into browser settings. Preserve the override on later updates.
+Docker environment changes require container recreation (`up -d`), not merely `restart`.
+
+先在故障 API 容器核对证书链、系统信任库和网络路径；仅在确认私有 CA 后使用上述只读挂载。
+不要下载并信任未知证书，不要关闭证书校验。环境变量修改后重建 API 容器；直接运行时重启进程。
+当前两条 DeepSeek 地址与真实模型回答已通过；历史间歇 TLS 根因尚未确定。

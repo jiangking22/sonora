@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     llm_base_url: str = "https://api.openai.com/v1"
     llm_api_key: SecretStr | None = None
     llm_model: str = Field(default="gpt-4.1-mini", min_length=1, max_length=100)
+    llm_ca_bundle: str | None = None
     agent_timeout_seconds: float = Field(default=90, ge=1, le=120)
 
     @field_validator("llm_base_url")

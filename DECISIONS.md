@@ -1,5 +1,16 @@
 # Architecture Decision Records / 架构决策记录
 
+## ADR-043: Verified model TLS and optional operator-mounted CA
+
+**Status:** Implemented (2026-10-14); historical intermittent TLS root cause unresolved.
+
+Use system trust and hostname verification, optionally adding a reviewed PEM via `LLM_CA_BUNDLE`.
+Compose mounts it read-only using `infra/compose.model-ca.yml` and `MODEL_CA_HOST_PATH`.
+Missing/invalid PEM fails closed. No insecure fallback, proxy auto-discovery, credential change,
+ranking change or automatic model retries. Current actual-container handshakes and real DeepSeek
+answer pass; historical failure was not reproduced. See docs/cloud-assistant-acceptance.md.
+保留 HTTPS 校验；私有 CA 必须由部署者核实并挂载，不将证书或密钥提交到仓库。
+
 ## ADR-042: Broader real-catalog exploration for sparse seed metadata
 
 **Status:** Implemented; user-authorized relaxation of ADR-041's strict relation gate.

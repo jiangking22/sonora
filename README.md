@@ -1,5 +1,10 @@
 # Sonora · Explainable Music Recommendation / 可解释音乐推荐
 
+Cloud connection: keep HTTPS verification enabled. Optional reviewed custom CA deployment and
+container troubleshooting are in [deployment](docs/DEPLOYMENT.md#model-tls--模型证书配置).
+云端连接保留证书校验；当前真实调用已通过，历史间歇证书错误尚未复现，详见
+[验证记录](docs/cloud-assistant-acceptance.md)。模型可用不代表网页搜索已配置。
+
 [![Release quality](https://github.com/jiangking22/sonora/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jiangking22/sonora/actions/workflows/ci.yml)
 
 Sonora is a music recommendation project combining a deterministic multi-source recommender with one bounded music

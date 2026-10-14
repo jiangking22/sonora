@@ -23,6 +23,7 @@ from app.agent.prompts import (
 )
 from app.agent.schemas import ModelCapabilities, NativeSearchState
 from app.infrastructure.config import get_settings
+from app.infrastructure.tls import model_ssl_context
 from app.observability.events import correlation_headers, emit
 
 
@@ -158,9 +159,11 @@ class OpenAICompatibleProvider:
     name = "openai_compatible"
 
     def __init__(self, base_url: str, api_key: str, model: str,
-                 transport: httpx.AsyncBaseTransport | None = None) -> None:
+                 transport: httpx.AsyncBaseTransport | None = None,
+                 ca_bundle: str | None = None) -> None:
         self.base_url, self.api_key, self.model = base_url.rstrip("/"), api_key, model
         self.transport = transport
+        self.ca_bundle = ca_bundle
 
     @property
     def supports_deep_thinking(self) -> bool:
@@ -207,7 +210,7 @@ class OpenAICompatibleProvider:
         async with (
             httpx.AsyncClient(timeout=httpx.Timeout(50 if deep else 10, connect=5),
                               transport=self.transport, follow_redirects=False,
-                              verify=ssl.create_default_context(), trust_env=False) as client,
+                              verify=model_ssl_context(self.ca_bundle), trust_env=False) as client,
             client.stream("POST", f"{self.base_url}/chat/completions",
                           headers={"Authorization": f"Bearer {self.api_key}", **correlation_headers()},
                           json=request_body) as response,
@@ -279,7 +282,7 @@ def get_llm_provider() -> LLMProvider:
     if settings.llm_provider == "local" or not settings.llm_api_key:
         return LocalLLMProvider()
     return OpenAICompatibleProvider(settings.llm_base_url, settings.llm_api_key.get_secret_value(),
-                                    settings.llm_model)
+                                    settings.llm_model, ca_bundle=settings.llm_ca_bundle)
 
 
 def model_capabilities(provider: LLMProvider, registry=None) -> ModelCapabilities:

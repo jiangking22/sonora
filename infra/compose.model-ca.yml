@@ -1,0 +1,12 @@
+# Optional: docker compose -f docker-compose.yml -f infra/compose.model-ca.yml up -d api
+services:
+  api:
+    environment:
+      LLM_CA_BUNDLE: /run/certs/model-ca.pem
+    volumes:
+      - type: bind
+        source: ${MODEL_CA_HOST_PATH:?Set an absolute path to an operator-reviewed CA PEM}
+        target: /run/certs/model-ca.pem
+        read_only: true
+        bind:
+          create_host_path: false

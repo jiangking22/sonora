@@ -1,5 +1,26 @@
 # TODO
 
+## Cloud assistant recovery / 云端助手连接与联网引导（2026-10-14）
+
+- [x] 1. Repair cloud TLS connection — verified current connectivity; historical root cause unresolved. Reproduce inside the actual API
+  container, inspect chain/trust/network, add failing regressions, repair verified TLS configuration
+  and optional deployment-mounted CA. Preserve credentials/model/ranking; verify and commit alone.
+- [ ] 2. Add safe configuration status, authenticated bounded diagnostics, actionable errors,
+  settings panel and explicit manual retry. Preserve JSON/SSE fallback compatibility.
+- [ ] 3. Extend existing Brave search configuration guidance and independent detection;
+  distinguish model health from search health and retain catalog verification/citations/budgets.
+
+Execute sequentially, one checked-out item and focused commit at a time. Verification:
+API pytest/Ruff/compile; Web tests/lint/typecheck/build; desktop/mobile runtime checks;
+`python scripts/legacy_smoke.py`. Record unavailable live checks explicitly. Update bilingual
+README, architecture and ADRs; never commit secrets or generated artifacts. No local model install.
+
+Item 1 acceptance: 402 API tests, Ruff/compile and legacy smoke pass. Actual API container
+verified both DNS certificate chains and a real DeepSeek answer before/after the update.
+Custom-CA regressions failed first. Standard image build hit Docker Hub network timeout;
+updated from the cached existing image (unchanged dependencies). No custom CA was needed.
+See docs/cloud-assistant-acceptance.md; no claim that the historical intermittent cause is fixed.
+
 ## Sparse metadata exploration / 稀疏元数据补满
 
 - [x] Reproduce 好想爱这个世界啊 with five results and disabled preference; add real-catalog
