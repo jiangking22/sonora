@@ -3,9 +3,11 @@
 ## Assistant diagnostics / 助手诊断
 
 Capabilities add non-secret model configuration status. Authenticated, CSRF-protected
-`POST /v1/agent/diagnostics` checks only the configured model using a fixed JSON request.
+`POST /v1/agent/diagnostics` accepts only `service=model|search`: a fixed model JSON request
+or the existing Brave adapter with fixed query `music` (five results, bounded response).
 Redis limits 3/account/minute and 20/global/minute; two process-wide slots, 12-second probe timeout,
-no retries. Additive `diagnostic_code` on chat responses/errors preserves JSON/SSE fallback fields.
+no retries. Search workers retain their slot after cancellation until actual completion.
+Model and search results remain separate; search failure is labelled unverified. Additive `diagnostic_code` on chat responses/errors preserves JSON/SSE fallback fields.
 Settings show configuration, timestamped last result and separate search status. Retry is explicit
 and retains the original question/thinking snapshot; no browser key storage or ranking changes.
 

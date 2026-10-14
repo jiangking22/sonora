@@ -22,7 +22,7 @@ export async function getAgentCapabilities(baseUrl: string, signal?: AbortSignal
   return result;
 }
 
-export async function diagnoseAgentService(baseUrl: string, service: "model", signal?: AbortSignal): Promise<DiagnosticResult> {
+export async function diagnoseAgentService(baseUrl: string, service: "model" | "search", signal?: AbortSignal): Promise<DiagnosticResult> {
   const response = await authFetch(`${baseUrl.replace(/\/$/, "")}/v1/agent/diagnostics`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ service }),
     signal, cache: "no-store",

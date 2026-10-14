@@ -7,7 +7,7 @@
   and optional deployment-mounted CA. Preserve credentials/model/ranking; verify and commit alone.
 - [x] 2. Add safe configuration status, authenticated bounded diagnostics, actionable errors,
   settings panel and explicit manual retry. Preserve JSON/SSE fallback compatibility.
-- [ ] 3. Extend existing Brave search configuration guidance and independent detection;
+- [x] 3. Extend existing Brave search configuration guidance and independent detection;
   distinguish model health from search health and retain catalog verification/citations/budgets.
 
 Execute sequentially, one checked-out item and focused commit at a time. Verification:
@@ -25,6 +25,13 @@ Item 2 acceptance: 423 API / 107 Web tests; Ruff/compile, ESLint/types/build and
 Real authenticated model diagnostic and cloud conversation pass. Controlled TLS error and explicit
 retry tested in Edge; 1440px/390px screenshots inspected, no overflow or page exceptions.
 No automatic paid probes or chat retries; model success never claims web search success.
+
+Item 3 acceptance (2026-10-15): 429 API / 109 Web tests, Ruff/compile, Web lint/types/build
+and legacy smoke pass. Six search/API and two UI regressions failed first. Real model diagnostic,
+chat/manual retry and unconfigured-search result verified in updated containers. Controlled web
+failure/citation displays verified at 1440px/390px with screenshots inspected and no page errors
+or overflow. Brave live search/citations remain **unverified: no configured key**. Two disposable
+QA accounts and dependent rows removed. Four containers healthy; secrets/generated output excluded.
 
 ## Sparse metadata exploration / 稀疏元数据补满
 

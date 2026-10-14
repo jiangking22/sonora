@@ -81,15 +81,16 @@ class ModelCapabilities(StrictModel):
 
 DiagnosticCode = Literal['ok', 'not_configured', 'tls_verification_failed', 'tls_configuration_error',
                          'connection_timeout', 'connection_failed', 'authentication_failed',
-                         'rate_limited', 'upstream_error', 'model_output_incompatible', 'diagnostics_busy']
+                         'rate_limited', 'upstream_error', 'model_output_incompatible',
+                         'search_output_incompatible', 'diagnostics_busy']
 
 
 class DiagnosticRequest(StrictModel):
-    service: Literal['model']
+    service: Literal['model', 'search']
 
 
 class DiagnosticResult(StrictModel):
-    service: Literal['model'] = 'model'
+    service: Literal['model', 'search'] = 'model'
     code: DiagnosticCode
     checked_at: str
     latency_ms: float = Field(ge=0)

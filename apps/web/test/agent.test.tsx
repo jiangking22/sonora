@@ -253,3 +253,27 @@ it("offers explicit retry of the failed original message without automatic resub
   expect(api.stream.mock.calls[1][1]).toBe("原始问题");
   expect(screen.getAllByText("原始问题")).toHaveLength(1);
 });
+
+
+it("detects search independently and does not turn model success into search success", async () => {
+  api.capabilities.mockResolvedValue({ provider: "openai_compatible", supports_deep_thinking: true,
+    native_search: { status: "unavailable", reason: "unsupported" }, model_configuration: "configured", web_search: "not_configured" });
+  api.diagnostics.mockImplementation(async (_base, service) => ({service, code: service === "model" ? "ok" : "not_configured",
+    checked_at: "2026-10-14T12:00:00Z", latency_ms: 1, request_id: "check"}));
+  render(<AgentClient />);
+  fireEvent.click(screen.getByText("智能服务设置"));
+  fireEvent.click(screen.getByRole("button", { name: "检测搜索连接" }));
+  expect(await screen.findByText(/最近搜索检测：网页搜索未配置/)).toBeInTheDocument();
+  expect(screen.getByText(/最近模型检测：尚未检测/)).toBeInTheDocument();
+  expect(api.diagnostics.mock.calls[0][1]).toBe("search");
+  expect(api.stream).not.toHaveBeenCalled();
+});
+
+it("labels failed web search as unverified even when the model reply succeeds", async () => {
+  api.stream.mockResolvedValue({...result,provider:"openai_compatible",search_report:{requested:5,returned:0,
+    reused:false,expanded:true,external_requests:2,web_search:"error",end_reason:"upstream_failure",attempts:[]}});
+  render(<AgentClient />);
+  fireEvent.change(screen.getByLabelText("想听什么？"), { target: { value: "查找歌曲" } });
+  fireEvent.click(screen.getByRole("button", { name: "发送" }));
+  expect(await screen.findByText(/网页检索失败，相关资料未核实/)).toBeInTheDocument();
+});

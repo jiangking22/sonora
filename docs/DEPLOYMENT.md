@@ -180,3 +180,23 @@ Docker environment changes require container recreation (`up -d`), not merely `r
 先在故障 API 容器核对证书链、系统信任库和网络路径；仅在确认私有 CA 后使用上述只读挂载。
 不要下载并信任未知证书，不要关闭证书校验。环境变量修改后重建 API 容器；直接运行时重启进程。
 当前两条 DeepSeek 地址与真实模型回答已通过；历史间歇 TLS 根因尚未确定。
+
+## Independent search check / 独立搜索检测
+
+Set `BRAVE_SEARCH_API_KEY` only in the server environment; keep `ENABLE_MUSIC_PROVIDERS=true`.
+Keep the existing DeepSeek key/model. Recreate with `docker compose up -d --force-recreate api`
+(preserve the custom-CA override if used), or restart the standalone API. Refresh the page and use
+**智能服务设置 → 检测搜索连接**. Never enter provider keys into chat or browser storage.
+
+Authenticated `POST /v1/agent/diagnostics` accepts only `{"service":"model"}` or
+`{"service":"search"}` and requires the existing CSRF header/origin. It rejects URL/key fields.
+Model sends one fixed JSON request; search sends one fixed `music` query through Brave. Checks
+may incur service charges. Redis limits both combined to three/account/minute and twenty/global/
+minute, with two active probes per API process and a 12-second probe deadline. Search workers
+retain their slot after timeout/cancellation until their bounded operation finishes. Redis failure
+prevents paid checks. Results include only service, code, checked_at, latency_ms and request_id;
+capabilities expose configuration, not verified connectivity. HTTP 429 includes Retry-After.
+
+搜索检测不调用模型、不使用聊天、不核实聊天中的歌曲。实际聊天按已有预算检索，网页线索须通过
+曲库核实后才展示引用。检索失败显示资料未核实；模型成功与搜索成功不能相互替代。
+本机尚无 Brave Key：真实检索及引用未验证。详细验证范围见 cloud-assistant-acceptance.md。

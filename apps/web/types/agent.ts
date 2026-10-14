@@ -32,6 +32,6 @@ export type AgentResponse = {
 
 export type DiagnosticCode = "ok" | "not_configured" | "tls_verification_failed" | "tls_configuration_error"
   | "connection_timeout" | "connection_failed" | "authentication_failed" | "rate_limited"
-  | "upstream_error" | "model_output_incompatible" | "diagnostics_busy";
-export type DiagnosticResult = { service: "model"; code: DiagnosticCode; checked_at: string;
+  | "upstream_error" | "model_output_incompatible" | "search_output_incompatible" | "diagnostics_busy";
+export type DiagnosticResult = { service: "model" | "search"; code: DiagnosticCode; checked_at: string;
   latency_ms: number; request_id: string };

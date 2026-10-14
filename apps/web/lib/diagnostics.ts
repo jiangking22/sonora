@@ -11,9 +11,17 @@ export const DIAGNOSTIC_HELP: Record<DiagnosticCode, string> = {
   rate_limited: "服务请求受限。请稍后手动重试，并检查服务端账号配额。",
   upstream_error: "上游服务异常。请检查服务状态及服务端模型配置，稍后手动重试。",
   model_output_incompatible: "模型输出不兼容。请检查所选模型是否支持当前 Chat Completions 和 JSON 输出格式。",
+  search_output_incompatible: "搜索服务返回格式异常。请检查 Brave Search API 服务状态，稍后手动再试；相关资料未核实。",
   diagnostics_busy: "连接检测正忙。请稍后手动再试。",
 };
 
 export function isDiagnosticCode(value: unknown): value is DiagnosticCode {
   return typeof value === "string" && Object.hasOwn(DIAGNOSTIC_HELP, value);
+}
+
+
+export function diagnosticHelp(code: DiagnosticCode, service: "model" | "search") {
+  if (service === "search" && code === "ok") return "网页搜索连接可用。仅完成固定测试查询，尚未核实本轮聊天资料。";
+  if (service === "search" && code === "not_configured") return "网页搜索未配置。请在服务端设置 BRAVE_SEARCH_API_KEY 并启用 ENABLE_MUSIC_PROVIDERS，再重新加载 API。";
+  return DIAGNOSTIC_HELP[code];
 }

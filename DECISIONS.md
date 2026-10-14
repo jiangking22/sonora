@@ -1,5 +1,24 @@
 # Architecture Decision Records / 架构决策记录
 
+## ADR-045: Independent Brave diagnostics and explicit unverified search
+
+**Status:** Implemented (2026-10-15).
+
+Extend the strict diagnostic service enum to `model|search`. Search reuses the configured Brave
+adapter with fixed query `music`, count five and its existing timeout/body limits. It never accepts
+an arbitrary target, receives chat content, invokes the model or creates recommendation evidence.
+Both services share Redis limits and two diagnostic slots. A timed-out synchronous search keeps
+its slot until it finishes. Missing search configuration is independent of model success.
+
+Page-local last results are timestamped separately. Brave configuration remains server-only:
+`BRAVE_SEARCH_API_KEY`, `ENABLE_MUSIC_PROVIDERS=true`, recreate API/restart process and refresh.
+Chat reports distinguish unconfigured, unused, attempted and failed web retrieval. Failure explicitly
+means related web facts remain unverified. Existing 24-operation/45-second discovery budget,
+canonical recording verification and bound citations remain unchanged. No automatic retries.
+
+模型可用不等于搜索可用；网页线索不是已核实歌曲。当前没有有效 Brave Key，真实搜索和引用流程
+未验证；适配器、曲库绑定及预算通过模拟测试，页面失败和引用展示通过受控浏览器验证。
+
 ## ADR-044: Authenticated explicit diagnostics and manual assistant retry
 
 **Status:** Implemented (2026-10-14).

@@ -8,7 +8,7 @@ from redis import Redis
 from sqlalchemy.orm import Session
 
 from app.agent.core import Agent, AgentError
-from app.agent.diagnostics import limit_diagnostics, probe_model
+from app.agent.diagnostics import limit_diagnostics, probe_model, probe_search
 from app.agent.providers import LLMProvider, get_llm_provider, model_capabilities
 from app.agent.schemas import (
     AgentRequest,
@@ -38,8 +38,11 @@ def capabilities(provider: Annotated[LLMProvider, Depends(get_llm_provider)],
 @router.post('/diagnostics', response_model=DiagnosticResult)
 async def diagnostics(request: DiagnosticRequest, identity: CurrentIdentity,
                       cache: Annotated[Redis, Depends(get_redis)],
+                      registry: Annotated[ProviderRegistry, Depends(get_provider_registry)],
                       provider: Annotated[LLMProvider, Depends(get_llm_provider)]):
     await run_blocking(lambda: limit_diagnostics(cache, identity.user_id))
+    if request.service == 'search':
+        return await probe_search(registry.web_search)
     return await probe_model(provider)
 
 

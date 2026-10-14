@@ -92,3 +92,5 @@
 .agent-retry button { justify-self: start; }
 .agent-retry small { color: #666; line-height: 1.5; }
 .agent-settings summary:focus-visible, .agent-settings button:focus-visible, .agent-retry button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+
+.agent-diagnostic-actions { display: flex; flex-wrap: wrap; gap: 8px; }

@@ -12,7 +12,9 @@ from app.agent.failures import diagnostic_code
 from app.agent.schemas import Answer, DiagnosticResult
 from app.auth.limits import _COUNT
 from app.auth.service import AuthError, digest
+from app.infrastructure.workers import run_blocking
 from app.observability.events import emit, request_id
+from app.providers.base import InvalidPayload
 
 PROBE_TIMEOUT = 12
 _slots = BoundedSemaphore(2)
@@ -29,10 +31,10 @@ def limit_diagnostics(cache, user_id):
         raise AuthError('diagnostics_unavailable', 503, 'Connection checks temporarily unavailable.', 2) from exc
 
 
-def result(code, started):
+def result(code, started, service='model'):
     elapsed = round((perf_counter() - started) * 1000, 3)
     emit('agent_diagnostic', code=code, latency_ms=elapsed)
-    return DiagnosticResult(code=code, checked_at=datetime.now(UTC).isoformat(),
+    return DiagnosticResult(service=service, code=code, checked_at=datetime.now(UTC).isoformat(),
                             latency_ms=elapsed, request_id=request_id())
 
 
@@ -52,3 +54,32 @@ async def probe_model(provider):
         return result(diagnostic_code(exc), started)
     finally:
         _slots.release()
+
+
+async def probe_search(search):
+    started = perf_counter()
+    if search is None:
+        return result('not_configured', started, 'search')
+
+    slots = _slots
+
+    def check():
+        # The worker owns the slot until actual completion, including after HTTP cancellation.
+        if not slots.acquire(blocking=False):
+            return 'diagnostics_busy'
+        try:
+            search.search('music')
+            return 'ok'
+        except (InvalidPayload, ValueError, TypeError, KeyError):
+            return 'search_output_incompatible'
+        except (httpx.HTTPError, OSError) as exc:
+            return diagnostic_code(exc)
+        finally:
+            slots.release()
+
+    try:
+        async with asyncio.timeout(PROBE_TIMEOUT):
+            code = await run_blocking(check)
+    except TimeoutError:
+        code = 'connection_timeout'
+    return result(code, started, 'search')

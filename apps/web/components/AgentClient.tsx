@@ -207,6 +207,11 @@ export default function AgentClient() {
           <p className="agent-footnote">音乐偏好随账号同步，对话仅限当前登录会话。</p>
           {result?.search_report ? <div className="agent-search-report" role="status">
             <p>{`找到 ${result.search_report.returned} / ${result.search_report.requested} 首 · ${result.search_report.expanded ? "已扩大检索" : result.search_report.reused ? "复用已有候选" : "曲库检索"}`}</p>
+            <p>{result.search_report.web_search === "error" ? "网页检索失败，相关资料未核实。已核实的曲库结果仍可使用。"
+              : result.search_report.web_search === "not_configured" ? "本轮未执行网页搜索：服务未配置，网页资料未核实。"
+              : result.search_report.web_search === "not_needed" ? "本轮未执行网页搜索，使用已有候选或曲库结果。"
+              : result.web_references?.length ? "本轮已检索网页；下方引用对应已通过曲库核实的歌曲。"
+              : "本轮已检索网页，但没有通过曲库核实的网页引用。"}</p>
             {SEARCH_REASONS[result.search_report.end_reason] ? <p>{SEARCH_REASONS[result.search_report.end_reason]}</p> : null}
           </div> : null}
           {capabilities?.music_catalog_search ? <p className="agent-footnote">音乐平台检索：{capabilities.music_catalog_search === "available" ? "可用" : "已关闭"}</p> : null}

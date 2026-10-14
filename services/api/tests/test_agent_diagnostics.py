@@ -12,6 +12,7 @@ from app.agent.providers import (
 )
 from app.infrastructure.cache import get_redis
 from app.main import app
+from app.providers.registry import ProviderRegistry, get_provider_registry
 
 
 class Counter:
@@ -121,3 +122,63 @@ def test_redis_outage_prevents_paid_probe(client):
     response = client.post('/v1/agent/diagnostics', json={'service': 'model'})
     assert response.status_code == 503
     assert 'marker' not in response.text
+
+
+def test_search_not_configured_is_independent_of_model(client):
+    provider_with({'choices': [{'message': {'content': '{"answer":"ok"}'}}]})
+    app.dependency_overrides[get_provider_registry] = lambda: ProviderRegistry([])
+    assert client.post('/v1/agent/diagnostics', json={'service': 'model'}).json()['code'] == 'ok'
+    response = client.post('/v1/agent/diagnostics', json={'service': 'search'})
+    assert response.status_code == 200
+    assert response.json()['code'] == 'not_configured'
+    assert response.json()['service'] == 'search'
+
+
+@pytest.mark.parametrize('status,code', [(200, 'ok'), (401, 'authentication_failed'),
+                                       (429, 'rate_limited'), (503, 'upstream_error')])
+def test_search_diagnostic_reuses_brave_fixed_bounded_request(client, status, code):
+    from pydantic import SecretStr
+
+    from app.providers.brave import BraveSearch
+
+    def respond(request):
+        assert str(request.url).startswith('https://api.search.brave.com/res/v1/web/search?')
+        assert request.url.params['q'] == 'music'
+        assert request.url.params['count'] == '5'
+        assert request.headers['X-Subscription-Token'] == 'private-search-marker'
+        return httpx.Response(status, json={'web': {'results': []}})
+
+    search = BraveSearch(SecretStr('private-search-marker'), httpx.Client(transport=httpx.MockTransport(respond)))
+    registry = ProviderRegistry([], web_search=search)
+    app.dependency_overrides[get_provider_registry] = lambda: registry
+    response = client.post('/v1/agent/diagnostics', json={'service': 'search'})
+    assert response.status_code == 200
+    assert response.json()['code'] == code
+    assert 'marker' not in response.text
+
+
+def test_timed_out_search_keeps_concurrency_slot_until_worker_finishes(monkeypatch):
+    import threading
+
+    from app.agent import diagnostics
+
+    release = threading.Event()
+    started = threading.Event()
+
+    class SlowSearch:
+        def search(self, query):
+            started.set()
+            release.wait(1)
+            return []
+
+    monkeypatch.setattr(diagnostics, 'PROBE_TIMEOUT', 0.02)
+    monkeypatch.setattr(diagnostics, '_slots', threading.BoundedSemaphore(1))
+
+    async def check():
+        try:
+            response = await diagnostics.probe_search(SlowSearch())
+            assert started.is_set() and response.code == 'connection_timeout'
+            assert (await diagnostics.probe_search(SlowSearch())).code == 'diagnostics_busy'
+        finally:
+            release.set()
+    asyncio.run(check())

@@ -32,3 +32,33 @@ passed authenticated model check and cloud chat. A browser-controlled TLS error 
 help; exactly one user-clicked retry then returned a real model answer. Screenshots at 1440px and
 390px were inspected: no horizontal overflow or page exceptions. Mocked failure is not live TLS
 reproduction. Actual search remains unconfigured. Latest diagnostics are page-local, not persisted.
+
+## Item 3: independent search guidance and detection (2026-10-15)
+
+Six API/search and two UI regressions failed before implementation. Final verification:
+429 API / 109 Web tests; API Ruff/compile, Web lint/typecheck/production build and
+`python scripts/legacy_smoke.py` pass. One pre-existing Starlette/httpx deprecation warning remains.
+Tests cover unconfigured search despite a successful model, fixed Brave URL/query/count,
+auth/rate/upstream errors and timeout slot retention. Existing progressive-search tests validate
+canonical recording identity, reject invented IDs, preserve source-bound references, and retain
+cancellation/deadline/budget behavior. No ranking or legacy-source diff exists.
+
+Updated local containers pass real authenticated model diagnostics, cloud chat, explicit manual
+retry after a browser-controlled TLS fault, and independent search-not-configured detection.
+Controlled SSE fixtures verify failed search's unverified-information notice and citation rendering
+at 390px/1440px; screenshots were inspected, with no overflow/page exceptions. These fixtures
+are not real Brave retrieval. Both task-created QA accounts and dependent rows were removed;
+all four containers are healthy. Original credentials/model remain unchanged.
+
+### Explicit limits / 未验证范围
+
+- Historical intermittent TLS failure did not recur; its underlying cause remains unresolved.
+  Current actual-container chain and real model calls succeed with verification enabled.
+- No Brave key is configured; live Brave search and resulting catalog-bound citations are unverified.
+  Configure the server-side key and use the documented independent check before live acceptance.
+- Standard Docker Hub image build was blocked by registry connectivity. Runtime was updated from
+  cached existing images with unchanged dependencies and the verified local Web production build.
+  This is not a clean network image rebuild. No public deployment or remote CI run is claimed.
+- Physical mobile keyboard behavior was not newly tested; responsive browser viewport was tested.
+
+三项按顺序独立交付；不关闭证书校验，不添加本地大模型或个人密钥存储，不自动重试聊天。
