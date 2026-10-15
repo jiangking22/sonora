@@ -1,5 +1,21 @@
 # TODO
 
+## GitHub synchronization and temporary mobile preview / 同步与手机临时体验（2026-10-15）
+
+- [x] Publish the accepted local history and provide a local-hosted HTTPS phone preview.
+  Release check first reproduced an unapproved Next.js production advisory on 16.3.7.
+  Scope: patch Next.js/eslint-config-next to 16.3.8, lockfile and this acceptance record.
+  Verify Web tests/lint/types/build/audit, API tests/Ruff/compile, legacy smoke, public
+  registration/session/profile/logout and remote SHA. Temporary tunnel/origin configuration
+  stays outside Git; preserve provider credentials and existing account data.
+
+Local acceptance: 429 API / 109 Web tests, CI-scoped Ruff/compile, Web lint/types/build,
+legacy smoke and dependency audit policy pass. Production dependency audit has zero findings;
+the existing development-only braces exception remains. Public HTTPS registration, Secure
+cookies, session/profile/capabilities and logout pass; disposable accounts removed.
+ngrok request inspection is disabled. Four local containers are healthy. The preview needs
+this computer, Docker and the tunnel running; remote publication is verified by matching SHA.
+
 ## Cloud assistant recovery / 云端助手连接与联网引导（2026-10-14）
 
 - [x] 1. Repair cloud TLS connection — verified current connectivity; historical root cause unresolved. Reproduce inside the actual API

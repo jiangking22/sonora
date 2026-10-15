@@ -12,7 +12,7 @@
     "audit": "node scripts/audit-check.mjs"
   },
   "dependencies": {
-    "next": "16.3.7",
+    "next": "16.3.8",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
@@ -23,7 +23,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "eslint": "9.39.2",
-    "eslint-config-next": "16.3.7",
+    "eslint-config-next": "16.3.8",
     "jsdom": "26.1.0",
     "typescript": "5.9.3",
     "vitest": "4.1.11"
