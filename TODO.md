@@ -1,5 +1,11 @@
 # TODO
 
+## Public README / 公开项目说明（2026-10-18）
+
+- [x] Replace the long bilingual homepage with a concise English README and an independent
+  Simplified Chinese page linked from both headers. Scope: README files, release link and
+  this checklist. Verify relative links, language switching, Markdown fences and diff hygiene.
+
 ## GitHub synchronization and temporary mobile preview / 同步与手机临时体验（2026-10-15）
 
 - [x] Publish the accepted local history and provide a local-hosted HTTPS phone preview.
